@@ -1,0 +1,5 @@
+# List of input/precision parameters passed
+# but not used (just for info)
+#
+sgnK = 1
+Delta_eta_0 = 0.01

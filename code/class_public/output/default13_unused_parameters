@@ -1,0 +1,7 @@
+# List of input/precision parameters passed
+# but not used (just for info)
+#
+P_k_max_h/Mpc = 1.
+z_pk = 0
+sgnK = 1
+Delta_eta_0 = 0.01
