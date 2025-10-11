@@ -1,0 +1,1 @@
+/home/lerufino/PlanckData/lingering_sims/background_runs/run_lingering_0.sh: line 41: 2075354 Segmentation fault      (core dumped) cobaya-run "$YAML_FILE" --allow-changes --resume > "$LOGFILE" 2>&1

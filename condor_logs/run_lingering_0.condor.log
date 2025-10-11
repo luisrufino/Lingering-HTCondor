@@ -1,0 +1,90 @@
+009 (3410326.000.000) 2025-10-08 14:18:34 Job was aborted.
+	via condor_rm (by user lerufino)
+...
+000 (3410327.000.000) 2025-10-08 14:19:33 Job submitted from host: <10.5.0.95:9618?addrs=10.5.0.95-9618&alias=its-og-login3.syr.edu&noUDP&sock=schedd_2038_7a1a>
+...
+001 (3410327.000.000) 2025-10-08 14:19:55 Job executing on host: <10.5.211.181:9618?addrs=10.5.211.181-9618&alias=CRUSH-OG-10-5-211-181&noUDP&sock=startd_1277_7e87>
+...
+006 (3410327.000.000) 2025-10-08 14:20:04 Image size of job updated: 39864
+	5  -  MemoryUsage of job (MB)
+	4180  -  ResidentSetSize of job (KB)
+...
+006 (3410327.000.000) 2025-10-08 14:20:51 Image size of job updated: 250804
+	5  -  MemoryUsage of job (MB)
+	4180  -  ResidentSetSize of job (KB)
+...
+005 (3410327.000.000) 2025-10-08 14:20:51 Job terminated.
+	(1) Normal termination (return value 139)
+		Usr 0 00:00:05, Sys 0 00:00:02  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:05, Sys 0 00:00:02  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.01        1         1 
+	   Disk (KB)            :     2     4194304   4217634 
+	   Memory (MB)          :     5        4096      4096 
+
+	Job terminated of its own accord at 2025-10-08T18:20:51Z with exit-code 139.
+...
+000 (3410329.000.000) 2025-10-08 14:46:18 Job submitted from host: <10.5.0.95:9618?addrs=10.5.0.95-9618&alias=its-og-login3.syr.edu&noUDP&sock=schedd_2038_7a1a>
+...
+001 (3410329.000.000) 2025-10-08 14:47:41 Job executing on host: <10.5.204.169:9618?addrs=10.5.204.169-9618&alias=OG-NODE-10-5-204-169&noUDP&sock=startd_1533_16c6>
+...
+006 (3410329.000.000) 2025-10-08 14:47:49 Image size of job updated: 32076
+	18  -  MemoryUsage of job (MB)
+	17424  -  ResidentSetSize of job (KB)
+...
+006 (3410329.000.000) 2025-10-08 14:48:02 Image size of job updated: 130152
+	18  -  MemoryUsage of job (MB)
+	17424  -  ResidentSetSize of job (KB)
+...
+005 (3410329.000.000) 2025-10-08 14:48:02 Job terminated.
+	(1) Normal termination (return value 139)
+		Usr 0 00:00:04, Sys 0 00:00:02  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:04, Sys 0 00:00:02  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :                 1         1 
+	   Disk (KB)            :        2  4194304   4214169 
+	   Memory (MB)          :       18     4096      4096 
+
+	Job terminated of its own accord at 2025-10-08T18:48:02Z with exit-code 139.
+...
+000 (3410846.000.000) 2025-10-08 18:01:31 Job submitted from host: <10.5.0.95:9618?addrs=10.5.0.95-9618&alias=its-og-login3.syr.edu&noUDP&sock=schedd_2038_7a1a>
+...
+001 (3410846.000.000) 2025-10-08 18:01:59 Job executing on host: <10.5.204.169:9618?addrs=10.5.204.169-9618&alias=OG-NODE-10-5-204-169&noUDP&sock=startd_1533_16c6>
+...
+006 (3410846.000.000) 2025-10-08 18:02:07 Image size of job updated: 67512
+	20  -  MemoryUsage of job (MB)
+	20084  -  ResidentSetSize of job (KB)
+...
+006 (3410846.000.000) 2025-10-08 18:02:18 Image size of job updated: 263996
+	20  -  MemoryUsage of job (MB)
+	20084  -  ResidentSetSize of job (KB)
+...
+005 (3410846.000.000) 2025-10-08 18:02:19 Job terminated.
+	(1) Normal termination (return value 139)
+		Usr 0 00:00:05, Sys 0 00:00:02  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:05, Sys 0 00:00:02  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	0  -  Run Bytes Sent By Job
+	0  -  Run Bytes Received By Job
+	0  -  Total Bytes Sent By Job
+	0  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated 
+	   Cpus                 :     0.29        1         1 
+	   Disk (KB)            :     2     4194304   4214169 
+	   Memory (MB)          :    20        4096      4096 
+
+	Job terminated of its own accord at 2025-10-08T22:02:18Z with exit-code 139.
+...

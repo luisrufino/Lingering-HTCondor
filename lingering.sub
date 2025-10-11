@@ -1,0 +1,17 @@
+# HTCondor submit file for lingering universe MCMC run
+
+# Your shell script to run Cobaya
+executable      = run_lingering_0.sh
+
+# Output paths
+output          = condor_logs/run_lingering_0.out
+error           = condor_logs/run_lingering_0.err
+log             = condor_logs/run_lingering_0.condor.log
+
+# Resource requests
+request_cpus    = 1
+request_memory  = 4 GB
+request_disk    = 4 GB
+
+# Number of jobs (1 in this case)
+queue
