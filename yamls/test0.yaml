@@ -19,9 +19,6 @@ params:
       loc: 0.05
     proposal: 0.005
     latex: \Omega_\mathrm{e}
-  bg_regime:
-    value: 1
-    latex: bg_{\mathrm{regime}}
   a_star:
     value: 1e-15
     latex: a_{*}}

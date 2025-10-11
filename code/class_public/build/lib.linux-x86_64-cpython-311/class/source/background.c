@@ -967,6 +967,22 @@ int background_init(
                     ) {
 
   /** Summary: */
+  /* Starting off in the exact lingering phase (Luis Rufino 10-11-25)*/
+
+  // Always start fresh in the lingering phase
+  pba->bg_regime = bg_regime_lingering_exact;
+
+  // Reset transition-related quantities
+  pba->a_exact         = 0.0;
+  pba->a_post          = 0.0;
+  pba->a_trans         = 0.0;
+  pba->a_prime_trans   = 0.0;
+  pba->tau_trans       = 0.0;
+  pba->time_trans      = 0.0;
+  pba->H_trans         = 0.0;
+  pba->H_prime_trans   = 0.0;
+  pba->flag_transitioned = _FALSE_;
+
 
   /** - write class version */
   if (pba->background_verbose > 0) {
@@ -980,6 +996,8 @@ int background_init(
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
 
+
+
   /** - assign values to all indices in vectors of background quantities */
   class_call(background_indices(pba),
              pba->error_message,
@@ -990,33 +1008,12 @@ int background_init(
              pba->error_message,
              pba->error_message);
 
-  /** - initialize lingering -> post-lingering transition values (Luis Rufino 8-5-25)*/
-  pba->a_exact = 0.0;
-  pba->a_post  = 0.0;
-  pba->a_trans = 0.0;
-  pba->a_prime_trans = 0.0;
-  pba->tau_trans = 0.0;
-  pba->time_trans = 0.0;
-  pba->H_trans = 0.0;
-  pba->H_prime_trans = 0.0;
-  pba->flag_transitioned = _FALSE_;
-
-  pba->ling_N_alloc = LINGER_INIT_CAP;
-  pba->ling_N_used  = 0;
-  pba->ling_min_deta = ppr->linger_min_deta; // currently set at 1e-3 in precision.h
-  pba->_ling_last_tau = -1e300; // the last τ at which we wrote a row.
-
-  class_alloc(pba->ling_tau, pba->ling_N_alloc*sizeof(double), pba->error_message);
-  class_alloc(pba->ling_a, pba->ling_N_alloc*sizeof(double), pba->error_message);
-  class_alloc(pba->ling_H, pba->ling_N_alloc*sizeof(double), pba->error_message);
-  class_alloc(pba->ling_eps, pba->ling_N_alloc*sizeof(double), pba->error_message);
 
   /** - integrate the background over log(a), allocate and fill the background table */
   class_call(background_solve(ppr,pba),
              pba->error_message,
              pba->error_message);
-  if (pba->background_verbose > 0)
-    printf("[LINGERING] captured %d rows\n", pba->ling_N_used); // Sanity check. 
+
   /** - find and store a few derived parameters at radiation-matter equality */
   class_call(background_find_equality(ppr,pba),
              pba->error_message,
@@ -1026,28 +1023,6 @@ int background_init(
   class_call(background_output_budget(pba),
              pba->error_message,
              pba->error_message);
-
-  // Print statments for debugging
-  if (pba->background_verbose > 0)
-  {
-    printf("[BACKGROUND_INIT][LINGERING] captured %d background samples\n",
-            pba->ling_N_used);
-    FILE *f = fopen("ling_background_samples.dat","w");
-    if (f)
-    {
-      for (int i=0;i<pba->ling_N_used;i++)
-        fprintf(f,"%.15e %.15e %.15e %.15e\n",
-                pba->ling_tau[i], pba->ling_a[i],
-                pba->ling_H[i], pba->ling_eps[i]);
-      fclose(f);
-      printf("[BACKGROUND_INIT][LINGERING] wrote ling_background_samples.dat\n");
-    }
-    else
-    {
-      printf("[BACKGROUND_INIT][LINGERING] could not open ling_background_samples.dat for writing\n");
-    }
-  }
-
 
 
   pba->is_allocated = _TRUE_;
@@ -1442,6 +1417,7 @@ int background_indices(
 
   /* -> end of indices in the vector of variables to integrate */
   pba->bi_size = index_bi;
+  printf("[BACKGROUND_INDEX] Final pba->bi_size = %d\n", pba->bi_size);
 
   return _SUCCESS_;
 
@@ -2249,7 +2225,6 @@ int background_solve(
         if (status == _FAILURE_)
         {
           printf("[EXACT LINGERING][BACKGROUND SOVLE] Transition flag hit!\n");
-          printf("--------------------------------------------------------\n");
           pvecback_integration[pba->index_bi_tau]  = pba->tau_trans;
           pvecback_integration[pba->index_bi_time] = pba->time_trans;
           pvecback_integration[pba->index_bi_a] = pba->a_trans;
@@ -2574,7 +2549,7 @@ int background_initial_conditions(
     pvecback_integration[pba->index_bi_time] = 0.0;   // start cosmic time
     // Luis Rufino 9-9-25
 
-    printf("[INIT_CONDITIONS] [DEBUG] ENTERED LINGERING BLOCK");
+    printf("[INIT_CONDITIONS] [DEBUG] ENTERED LINGERING BLOCK\n");
     printf("[CLASS] [DEBUG] a_star = %.2e\n", pba->a_star);
     printf("[INIT_CONDITIONS] [DEBUG] Delta: %.5e, Delta_prime: %.5e\n",
             pvecback_integration[pba->index_bi_Delta], 
@@ -3007,6 +2982,7 @@ int background_lingering_derivs(double tau, double* y,
     pba =  pbpaw->pba;
     pvecback = pbpaw->pvecback;
 
+
     double m = pba->m_s;
     double n = pba->n_e;
     double w_s = pba->w_s;
@@ -3087,16 +3063,6 @@ int background_lingering_derivs(double tau, double* y,
         // printf("[DEBUG LINGERING] H_conf = %.5e H'_conf = %.5e a = %.5e a' = %.5e\n", 
         // H_conformal,H_prime, a, a_prime);
 
-        // Populate the background quantities, and store them in each pvecback array 
-//        pvecback[pba->index_bg_rho_e] = rho_e_star * pow(a, -n);
-//        pvecback[pba->index_bg_rho_s] = rho_s_star * pow(a, -m);
-//        rho_tot_ling += pvecback[pba->index_bg_rho_e] + pvecback[pba->index_bg_rho_s];
-//
-//
-//        pvecback[pba->index_bg_H] = H_prop;
-//        pvecback[pba->index_bg_H_prime] = H_prime_prop;
-//        pvecback[pba->index_bg_a] = a;
-//
         class_call(background_functions(pba, a, y, normal_info, pvecback),
              pba->error_message,
              error_message);
@@ -3136,6 +3102,14 @@ int background_lingering_derivs(double tau, double* y,
         double a = y[pba->index_bi_a];
         double aprime = y[pba->index_bi_a_prime];
         double adprime, rho_e_trans, rho_s_trans;
+
+        if (!isfinite(a) || !isfinite(aprime) || fabs(a) < 1e-40) {
+          printf("[NaN GUARD] tau=%.5e a=%.5e a' = %.5e \n", tau, a, aprime);
+          fflush(stdout);
+          return _FAILURE_;
+        }
+
+
         if (n < 2.0)
         {
             /* Pre-factor C */

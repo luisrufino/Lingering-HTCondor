@@ -3172,7 +3172,6 @@ int input_read_parameters_species(struct file_content * pfc,
   class_call(parser_read_double(pfc, "Delta_eta", &param_Delta_eta, &flag_Delta_eta, errmsg),
             errmsg, errmsg);
 
-  class_read_int("bg_regime", pba->bg_regime);
 
   /* Read the has_exact_ling flag from the input file, which specifies
      whether to use the exact-lingering analytic solution. */
@@ -3207,44 +3206,42 @@ int input_read_parameters_species(struct file_content * pfc,
     pba->has_exotic = _FALSE_;
   }
 
-  if(pba->bg_regime == 1)
-  {
 
-      // === Assign parsed parameters to the background structure ===
-      if (flag_m_s == _TRUE_) {
-        pba->m_s = param_m_s;
-      }
-
-      if (flag_Delta_e == _TRUE_) {
-        pba->Delta_e = param_Delta_e;
-      }
-
-      if (flag_Delta_s == _TRUE_) {
-        pba->Delta_s = param_Delta_s;
-      }
-
-      if (flag_Delta_rho_s == _TRUE_) {
-        pba->Delta_rho_s = param_Delta_rho_s;
-      }
-
-      if (flag_Delta_eta == _TRUE_) {
-        pba->Delta_eta_0 = param_Delta_eta;
-      }
-
-    printf("[CLASS] Exact Lingering enabled:\n");
-    printf("  Omega0_e  = %e\n", pba->Omega0_e);
-    printf("  n_e       = %f\n", pba->n_e);
-    printf("  m_s       = %f\n", pba->m_s);
-    printf("  a_star    = %e\n", pba->a_star);
-    printf("  Delta_e   = %e\n", pba->Delta_e);
-    printf("  Delta_s   = %e\n", pba->Delta_s);
-    printf("  Delta_rho_s = %e\n", pba->Delta_rho_s);
-    printf("  Delta_eta_0 = %e\n", pba->Delta_eta_0);
-    printf("[CLASS] Matter Content\n");
-    printf("  Omega0_b   = %e\n", pba->Omega0_b);
-    printf("  Omega0_cdm = %e\n", pba->Omega0_cdm);
-    printf("  Omega0_k   = %e\n", pba->Omega0_k);
+  // === Assign parsed parameters to the background structure ===
+  if (flag_m_s == _TRUE_) {
+    pba->m_s = param_m_s;
   }
+
+  if (flag_Delta_e == _TRUE_) {
+    pba->Delta_e = param_Delta_e;
+  }
+
+  if (flag_Delta_s == _TRUE_) {
+    pba->Delta_s = param_Delta_s;
+  }
+
+  if (flag_Delta_rho_s == _TRUE_) {
+    pba->Delta_rho_s = param_Delta_rho_s;
+  }
+
+  if (flag_Delta_eta == _TRUE_) {
+    pba->Delta_eta_0 = param_Delta_eta;
+  }
+
+  printf("[CLASS] Exact Lingering enabled:\n");
+  printf("  Omega0_e  = %e\n", pba->Omega0_e);
+  printf("  n_e       = %f\n", pba->n_e);
+  printf("  m_s       = %f\n", pba->m_s);
+  printf("  a_star    = %e\n", pba->a_star);
+  printf("  Delta_e   = %e\n", pba->Delta_e);
+  printf("  Delta_s   = %e\n", pba->Delta_s);
+  printf("  Delta_rho_s = %e\n", pba->Delta_rho_s);
+  printf("  Delta_eta_0 = %e\n", pba->Delta_eta_0);
+  printf("[CLASS] Matter Content\n");
+  printf("  Omega0_b   = %e\n", pba->Omega0_b);
+  printf("  Omega0_cdm = %e\n", pba->Omega0_cdm);
+  printf("  Omega0_k   = %e\n", pba->Omega0_k);
+
 
   /* End of adding exotic lingering fluid (Luis Rufino, 6-10-25) */
 
