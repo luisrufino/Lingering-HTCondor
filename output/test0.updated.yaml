@@ -1,0 +1,185 @@
+theory:
+  classy:
+    path: /home/lerufino/PlanckData/lingering_sims/background_runs/code/class_public
+    speed: 0.2
+    stop_at_error: false
+    extra_args:
+      output: tCl
+      format: camb
+      background_verbose: 3
+    ignore_obsolete: false
+    use_renames: false
+    renames:
+      As: A_s
+      ns: n_s
+      nrun: alpha_s
+      nrunrun: beta_s
+      nt: n_t
+      ntrun: alpha_t
+      rdrag: rs_drag
+      omegak: Omega_k
+      omegal: Omega_Lambda
+      w: w0_fld
+      wa: wa_fld
+      omegabh2: omega_b
+      omegab: Omega_b
+      omegach2: omega_cdm
+      omegac: Omega_cdm
+      omegam: Omega_m
+      omegan: Omega_nu
+      tau: tau_reio
+      zrei: z_reio
+      deltazrei: reionization_width
+      helium_redshift: helium_fullreio_redshift
+      helium_delta_redshift: helium_fullreio_width
+      yhe: YHe
+      yheused: YHe
+    version: v3.3.0
+    input_params:
+    - Omega_e
+    - a_star
+    - n_e
+    - m_s
+    - Delta_e
+    - Delta_s
+    - Delta_rho_s
+    - A_s
+    - Omega_k
+    - H0
+    - omega_b
+    - omega_cdm
+    - tau_reio
+    - n_s
+    output_params: []
+likelihood:
+  planck_2018_lowl.TT:
+    lmin: 2
+    lmax: 29
+    type: CMB
+    aliases:
+    - lowT
+    speed: -1
+    stop_at_error: false
+    version: null
+    input_params: []
+    output_params: []
+params:
+  Omega_e:
+    prior:
+      min: 0.001
+      max: 0.25
+    proposal: 0.005
+  a_star:
+    value: 1.0e-15
+  n_e:
+    value: 1.0
+  m_s:
+    value: 3.0
+  Delta_e:
+    prior:
+      min: 0.001
+      max: 0.24
+    proposal: 0.01
+  Delta_s:
+    prior:
+      min: 0.0001
+      max: 0.05
+    proposal: 0.001
+  Delta_rho_s:
+    prior:
+      min: 0.0001
+      max: 0.05
+    proposal: 0.001
+  logA:
+    prior:
+      min: 1.61
+      max: 3.91
+    ref:
+      dist: norm
+      loc: 3.05
+      scale: 0.001
+    proposal: 0.001
+    drop: true
+  A_s:
+    value: true
+    derived: true
+    renames:
+    - As
+  Omega_k:
+    prior:
+      min: 0.0
+      max: 0.3
+    proposal: 0.001
+    renames:
+    - omegak
+  H0:
+    prior:
+      min: 30
+      max: 90
+    proposal: 0.5
+  omega_b:
+    prior:
+      min: 0.005
+      max: 0.1
+    proposal: 0.0001
+    renames:
+    - omegabh2
+  omega_cdm:
+    prior:
+      min: 0.001
+      max: 0.99
+    proposal: 0.0005
+    renames:
+    - omegach2
+  tau_reio:
+    prior:
+      min: 0.01
+      max: 0.8
+    proposal: 0.003
+    renames:
+    - tau
+  n_s:
+    prior:
+      min: 0.8
+      max: 1.2
+    proposal: 0.002
+    renames:
+    - ns
+  chi2__CMB:
+    latex: \chi^2_\mathrm{CMB}
+    derived: true
+sampler:
+  mcmc:
+    burn_in: 0
+    max_tries: 40d
+    covmat: auto
+    covmat_params: null
+    proposal_scale: 1.9
+    output_every: 60s
+    learn_every: 40d
+    temperature: 1
+    learn_proposal: true
+    learn_proposal_Rminus1_max: 2.0
+    learn_proposal_Rminus1_max_early: 30.0
+    learn_proposal_Rminus1_min: 0.0
+    max_samples: .inf
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+    Rminus1_cl_level: 0.95
+    Rminus1_single_split: 4
+    measure_speeds: true
+    oversample_power: 0.4
+    oversample_thin: true
+    drag: false
+    blocking: null
+    callback_function: null
+    callback_every: null
+    seed: null
+    check_every: null
+    oversample: null
+    drag_limits: null
+    fallback_covmat_scale: 4
+    version: null
+output: test0
+allow_changing_params: true
+version: 3.5.7

@@ -1,0 +1,88 @@
+theory:
+  classy:
+    path: /home/lerufino/PlanckData/lingering_sims/background_runs/code/class_public
+    extra_args:
+      output: tCl
+      format: camb
+      background_verbose: 3
+likelihood:
+  planck_2018_lowl.TT: null
+params:
+  Omega_e:
+    prior:
+      min: 0.001
+      max: 0.25
+    proposal: 0.005
+  a_star:
+    value: 1.0e-15
+  n_e:
+    value: 1.0
+  m_s:
+    value: 3.0
+  Delta_e:
+    prior:
+      min: 0.001
+      max: 0.24
+    proposal: 0.01
+  Delta_s:
+    prior:
+      min: 0.0001
+      max: 0.05
+    proposal: 0.001
+  Delta_rho_s:
+    prior:
+      min: 0.0001
+      max: 0.05
+    proposal: 0.001
+  logA:
+    prior:
+      min: 1.61
+      max: 3.91
+    ref:
+      dist: norm
+      loc: 3.05
+      scale: 0.001
+    proposal: 0.001
+    drop: true
+  A_s:
+    value: true
+  Omega_k:
+    prior:
+      min: 0.0
+      max: 0.3
+    proposal: 0.001
+  H0:
+    prior:
+      min: 30
+      max: 90
+    proposal: 0.5
+  omega_b:
+    prior:
+      min: 0.005
+      max: 0.1
+    proposal: 0.0001
+  omega_cdm:
+    prior:
+      min: 0.001
+      max: 0.99
+    proposal: 0.0005
+  tau_reio:
+    prior:
+      min: 0.01
+      max: 0.8
+    proposal: 0.003
+  n_s:
+    prior:
+      min: 0.8
+      max: 1.2
+    proposal: 0.002
+sampler:
+  mcmc:
+    drag: false
+    oversample_power: 0.4
+    proposal_scale: 1.9
+    covmat: auto
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+output: test0
+allow_changing_params: true

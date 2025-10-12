@@ -973,14 +973,12 @@ int background_init(
   pba->bg_regime = bg_regime_lingering_exact;
 
   // Reset transition-related quantities
-  pba->a_exact         = 0.0;
-  pba->a_post          = 0.0;
-  pba->a_trans         = 0.0;
-  pba->a_prime_trans   = 0.0;
-  pba->tau_trans       = 0.0;
-  pba->time_trans      = 0.0;
-  pba->H_trans         = 0.0;
-  pba->H_prime_trans   = 0.0;
+  pba->a_trans = 0.0;
+  pba->a_prime_trans = 0.0;
+  pba->tau_trans = 0.0;
+  pba->time_trans = 0.0;
+  pba->H_trans = 0.0;
+  pba->H_prime_trans = 0.0;
   pba->flag_transitioned = _FALSE_;
 
 
@@ -2246,8 +2244,9 @@ int background_solve(
         else
         {
             // real error: print and exit
-            class_stop("Integration failed in lingering phase: %s", pba->error_message);
+            printf("Error in background_solve: Integration failed in lingering phase.\n");
             return _FAILURE_;
+
         }
       }
 
@@ -2301,7 +2300,9 @@ int background_solve(
             continue;
         }
         else{
-        class_stop("Integration failed in post lingering phase: %s", pba->error_message);
+        printf("[background] Integration failed in lingering phase (post-transition).\n");
+        return _FAILURE_;
+
         }
       }
   }
@@ -3490,7 +3491,10 @@ int background_output_budget(
       class_print_species("Decaying Cold Dark Matter",dcdm);
       budget_matter+=pba->Omega0_dcdm;
     }
-
+    if (pba->has_exotic == _TRUE_){
+      class_print_species("Exotic Fluid", e); // e For exotic
+      budget_other += pba->Omega0_e;
+    }
     if (pba->N_ncdm > 0) {
       printf(" ---> Non-Cold Dark Matter Species (incl. massive neutrinos)\n");
     }
