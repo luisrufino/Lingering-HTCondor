@@ -1,5 +1,6 @@
 theory:
   classy:
+    stop_at_error: False
     path: /home/lerufino/PlanckData/lingering_sims/background_runs/code/class_public
     extra_args:
       output: "tCl"

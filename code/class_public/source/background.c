@@ -1043,12 +1043,6 @@ int background_free(
                     struct background *pba
                     ) 
 {
-  if (pba->ling_tau)  free(pba->ling_tau);
-  if (pba->ling_a)    free(pba->ling_a);
-  if (pba->ling_H)    free(pba->ling_H);
-  if (pba->ling_eps)  free(pba->ling_eps);
-  pba->ling_tau = pba->ling_a = pba->ling_H = pba->ling_eps = NULL;
-  pba->ling_N_alloc = pba->ling_N_used = 0;
 
   class_call(background_free_noinput(pba),
              pba->error_message,
@@ -1291,24 +1285,13 @@ int background_indices(
      normal vector */
 
   /* Adding exotic fluid and standard fluid for lingering phases*/
-  if (pba->bg_regime == bg_regime_lingering_exact)
-  {
-    class_define_index(pba->index_bg_rho_s, _TRUE_, index_bg, 1);
-    class_define_index(pba->index_bg_p_s, _TRUE_, index_bg, 1);
-    //class_define_index(pba->index_bi_rho_s, _TRUE_, index_bi, 1);
-    //class_define_index(pba->index_bi_rho_e, _TRUE_, index_bi, 1);
-  }
+  class_define_index(pba->index_bg_rho_s, _TRUE_, index_bg, 1);
+  class_define_index(pba->index_bg_p_s, _TRUE_, index_bg, 1);
+  class_define_index(pba->index_bg_rho_e, _TRUE_, index_bi, 1);
+  class_define_index(pba->index_bg_rho_e, _TRUE_, index_bi, 1);
 
-  //class_define_index(pba->index_bg_rho_s, bg_regime == bg_regime_lingering_exact, index_bg, 1); // Only added if you want the exotic fluid 
-  //class_define_index(pba->index_bg_p_s, bg_regime == bg_regime_lingering_exact, index_bg, 1);
-  class_define_index(pba->index_bg_rho_e, pba->has_exotic, index_bg, 1);
-  class_define_index(pba->index_bg_p_e, pba->has_exotic, index_bg, 1);
   /*    */
   /*    */
-
-  /* - index for exotic fluid density and pressure (Luis Rufino, 6-10-25) */
-  class_define_index(pba->index_bg_rho_e, pba->has_exotic, index_bg, 1);
-  class_define_index(pba->index_bg_p_e,   pba->has_exotic, index_bg, 1);
 
 
   /* - end of indices in the normal vector of background values */
@@ -2146,6 +2129,21 @@ int background_solve(
   double tau_ini;
   double tau_final = 1000.0;  
 
+  /* -------------------------------------------------------------------- */
+  /* [COBAYA SAFETY RESET] Clear any stale transition values between runs */
+  /* -------------------------------------------------------------------- */
+  pba->a_exact         = 0.0;
+  pba->a_post          = 0.0;
+  pba->a_trans         = 0.0;
+  pba->a_prime_trans   = 0.0;
+  pba->tau_trans       = 0.0;
+  pba->time_trans      = 0.0;
+  pba->H_trans         = 0.0;
+  pba->H_prime_trans   = 0.0;
+  pba->flag_transitioned = _FALSE_;
+  pba->bg_regime = bg_regime_lingering_exact;
+
+
   /** - setup background workspace */
   bpaw.pba = pba;
   class_alloc(pvecback,pba->bg_size*sizeof(double),pba->error_message);
@@ -2554,6 +2552,24 @@ int background_initial_conditions(
     printf("[INIT_CONDITIONS] [DEBUG] Delta: %.5e, Delta_prime: %.5e\n",
             pvecback_integration[pba->index_bi_Delta], 
             pvecback_integration[pba->index_bi_Delta_prime]);
+    printf("[DEBUG IC] bi_size=%d, index_bi_a=%d, pvecback_integration=%p\n",
+       pba->bi_size, pba->index_bi_a, (void*)pvecback_integration);
+
+    /* ------------------------------------------------------------ */
+    /* [COBAYA REENTRY SAFETY GUARD for pvecback]                   */
+    /* ------------------------------------------------------------ */
+    printf("[DEBUG IC2] bg_size=%d, index_bg_H=%d, pvecback=%p, error_message=%p\n",
+       pba->bg_size, pba->index_bg_H, (void*)pvecback, (void*)pba->error_message);
+
+    if (pvecback == NULL) {
+      class_alloc(pvecback, pba->bg_size * sizeof(double), pba->error_message);
+      for (int i = 0; i < pba->bg_size; i++) pvecback[i] = 0.0;
+    }
+
+    if (pba->index_bg_H < 0 || pba->index_bg_H >= pba->bg_size) {
+      class_stop("Invalid index_bg_H = %d (bg_size = %d)", pba->index_bg_H, pba->bg_size);
+    }
+
     if (pba->background_verbose > 0) {
       printf("[CLASS] Overriding initial conditions to start in lingering phase.\n");
       printf("         a_ini = %.1e\n", a);
