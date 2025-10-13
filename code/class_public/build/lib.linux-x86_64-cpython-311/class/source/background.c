@@ -2125,7 +2125,8 @@ int background_solve(
   // conformal time range (Luis Rufino)
 
   double tau_ini;
-  double tau_final = 1000.0;  
+  double tau_final;
+  double tau_step = 10; // increas tau for integration
 
   /* -------------------------------------------------------------------- */
   /* [COBAYA SAFETY RESET] Clear any stale transition values between runs */
@@ -2200,61 +2201,75 @@ int background_solve(
   {
       if (pba->bg_regime == bg_regime_lingering_exact)
       {
+        tau_ini = 0;
+        tau_final = tau_ini + tau_step;
         int status; 
-        status = generic_evolver(background_lingering_derivs,
-                               0.0,
-                               tau_final,
-                               pvecback_integration,
-                               used_in_output,
-                               pba->bi_size,
-                               &bpaw,
-                               ppr->tol_background_integration,
-                               ppr->smallest_allowed_variation,
-                               background_timescale,  // probably fine to keep this...
-                               ppr->background_integration_stepsize,
-                               pba->tau_table,
-                               pba->bt_size,
-                               background_sources,
-                               NULL,
-                               pba->error_message);
-
-        if (status == _FAILURE_)
+        while (pba->flag_transitioned == _FALSE_)
         {
-          printf("[EXACT LINGERING][BACKGROUND SOVLE] Transition flag hit!\n");
-          pvecback_integration[pba->index_bi_tau]  = pba->tau_trans;
-          pvecback_integration[pba->index_bi_time] = pba->time_trans;
-          pvecback_integration[pba->index_bi_a] = pba->a_trans;
-          pvecback_integration[pba->index_bi_a_prime] = pba->a_prime_trans;
-          tau_ini = pba->tau_trans;
-          printf("tau_ini = %.5e\n", tau_ini);
-          printf("a: %.5e, a' = %.5e\n"
-               ,pvecback_integration[pba->index_bi_a], 
-                pvecback_integration[pba->index_bi_a_prime]);
-         /* -> age in Gyears */
-          pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
-          printf("[AGE] Phase end at tau=%.3e: t = %.5e (Mpc) → %.5e Gyr\n",
-          pba->tau_trans,
-          pvecback_integration[pba->index_bi_time],
-          pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_);
-          printf("--------------------------------------------------------\n");
-          pba->bg_regime = bg_regime_post_lingering;
-          pba->flag_transitioned = _FALSE_;
-          continue;
+            status = generic_evolver(background_lingering_derivs,
+                                   0.0,
+                                   tau_final,
+                                   pvecback_integration,
+                                   used_in_output,
+                                   pba->bi_size,
+                                   &bpaw,
+                                   ppr->tol_background_integration,
+                                   ppr->smallest_allowed_variation,
+                                   background_timescale,  // probably fine to keep this...
+                                   ppr->background_integration_stepsize,
+                                   pba->tau_table,
+                                   pba->bt_size,
+                                   background_sources,
+                                   NULL,
+                                   pba->error_message);
+            if (status == _FAILURE_)
+            {
+                printf("[ERROR] Integration failure before transition.\n");
+                return _FAILURE_;
+            }
+            /* If derivative triggered transition (Δ > 1), stop growing τ */
+            if (pba->flag_transitioned == _TRUE_) break;
+            /* otherwise extend window and continue */
+            tau_ini   = tau_final;
+            tau_final += tau_step;
+            if (tau_final > 1000.0) {
+                printf("[LINGERING] Reached τ=1000 with no transition.\n");
+                return _FAILURE_;
+            }
         }
-        else
-        {
-            // real error: print and exit
-            printf("Error in background_solve: Integration failed in lingering phase.\n");
-            return _FAILURE_;
+        printf("[EXACT LINGERING][BACKGROUND SOVLE] Transition flag hit!\n");
+        pvecback_integration[pba->index_bi_tau]  = pba->tau_trans;
+        pvecback_integration[pba->index_bi_time] = pba->time_trans;
+        pvecback_integration[pba->index_bi_a] = pba->a_trans;
+        pvecback_integration[pba->index_bi_a_prime] = pba->a_prime_trans;
+        tau_ini = pba->tau_trans;
+        printf("tau_ini = %.5e\n", tau_ini);
+        printf("a: %.5e, a' = %.5e\n"
+             ,pvecback_integration[pba->index_bi_a], 
+              pvecback_integration[pba->index_bi_a_prime]);
+       /* -> age in Gyears */
+        pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
+        printf("[AGE] Phase end at tau=%.3e: t = %.5e (Mpc) → %.5e Gyr\n",
+                pba->tau_trans,
+                pvecback_integration[pba->index_bi_time],
+                pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_);
+        printf("--------------------------------------------------------\n");
 
-        }
+        pba->bg_regime = bg_regime_post_lingering;
+        pba->flag_transitioned = _FALSE_;
+        continue;
       }
 
       else if (pba->bg_regime == bg_regime_post_lingering)
       {
-         printf("[POST LINGERING][BACKGROUND SOLVE]\n");
-         int status;
-         status = generic_evolver(background_lingering_derivs,
+        printf("[POST-LINGERING][BACKGROUND SOLVE]\n");
+        tau_ini = pba->tau_trans;
+        tau_final = tau_ini + tau_step;
+        int status;
+
+        while(pba->flag_transitioned == _FALSE_)
+        {
+           status = generic_evolver(background_lingering_derivs,
                                tau_ini,
                                tau_final,
                                pvecback_integration,
@@ -2271,39 +2286,47 @@ int background_solve(
                                NULL,
                                pba->error_message);
 
+           if (status == _FAILURE_) {
+             printf("[ERROR] Post-lingering integration failure.\n");
+             return _FAILURE_;
+            }
 
-        if(status == _FAILURE_)
-        {
-            printf("[POST LINGERING][BACKGROUND SOLVE] Transition flag hit!\n");
-            printf("Moving to standard inflation\n");
-            printf("tau_ini = %.5e\n", tau_ini);
-            printf("a: %.5e, a' = %.5e\n"
-               ,pvecback_integration[pba->index_bi_a], 
-                pvecback_integration[pba->index_bi_a_prime]);
+           if (pba->flag_transitioned == _TRUE_) break;
 
-            /* Setting up the transition (Luis Rufino, 9-4-25) */
-            printf("------------Setting up transition--------\n");
-            pvecback_integration[pba->index_bi_tau] = pba->tau_trans;
-            pvecback_integration[pba->index_bi_time] = pba->time_trans;
-            pvecback_integration[pba->index_bi_a] = pba->a_trans;
-            pvecback_integration[pba->index_bi_a_prime]  = pba->a_prime_trans;
-            /* -> age in Gyears */
-            pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
-            printf("[AGE] Phase end at tau=%.3e: t = %.5e (Mpc) → %.5e Gyr\n",
-            pba->tau_trans,
-            pvecback_integration[pba->index_bi_time],
-            pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_);
-            loga_ini = log(pba->a_trans); // Working
-            printf("H_prop = %.5e\n", pba->H_trans/pba->a_trans);
-            printf("-----------------------------------------\n");
-            pba->bg_regime = bg_regime_standard;
-            continue;
+           tau_ini   = tau_final;
+           tau_final += tau_step;
+           if (tau_final > 1000.0) {
+             printf("[POST-LINGERING] Reached τ=1000 with no transition.\n");
+             return _FAILURE_;
+            }
         }
-        else{
-        printf("[background] Integration failed in lingering phase (post-transition).\n");
-        return _FAILURE_;
 
-        }
+
+        printf("[POST LINGERING][BACKGROUND SOLVE] Transition flag hit!\n");
+        printf("Moving to standard inflation\n");
+        printf("tau_ini = %.5e\n", tau_ini);
+        printf("a: %.5e, a' = %.5e\n"
+           ,pvecback_integration[pba->index_bi_a], 
+            pvecback_integration[pba->index_bi_a_prime]);
+
+        /* Setting up the transition (Luis Rufino, 9-4-25) */
+        printf("------------Setting up transition--------\n");
+        pvecback_integration[pba->index_bi_tau] = pba->tau_trans;
+        pvecback_integration[pba->index_bi_time] = pba->time_trans;
+        pvecback_integration[pba->index_bi_a] = pba->a_trans;
+        pvecback_integration[pba->index_bi_a_prime]  = pba->a_prime_trans;
+        /* -> age in Gyears */
+        pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
+        printf("[AGE] Phase end at tau=%.3e: t = %.5e (Mpc) → %.5e Gyr\n",
+        pba->tau_trans,
+        pvecback_integration[pba->index_bi_time],
+        pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_);
+        loga_ini = log(pba->a_trans); // Working
+        printf("H_prop = %.5e\n", pba->H_trans/pba->a_trans);
+        printf("-----------------------------------------\n");
+        pba->bg_regime = bg_regime_standard; // While loop ends here
+        pba->flag_transitioned == _FALSE_; // added this to test for seg faults
+        continue;
       }
   }
 
@@ -3107,8 +3130,8 @@ int background_lingering_derivs(double tau, double* y,
             printf("[DEBUG LINGERING] Transition set: flag_transitioned = %d\n", pba->flag_transitioned);
             printf("----------------------------------------------\n");
             //printf("[DEBUG LINGERING] bg_regime = %d\n", pba->bg_regime);
-            //return _SUCCESS_;
-            return _FAILURE_;
+            return _SUCCESS_;
+            //return _FAILURE_;
        }
 
     }
@@ -3119,13 +3142,6 @@ int background_lingering_derivs(double tau, double* y,
         double a = y[pba->index_bi_a];
         double aprime = y[pba->index_bi_a_prime];
         double adprime, rho_e_trans, rho_s_trans;
-
-        if (!isfinite(a) || !isfinite(aprime) || fabs(a) < 1e-40) {
-          printf("[NaN GUARD] tau=%.5e a=%.5e a' = %.5e \n", tau, a, aprime);
-          fflush(stdout);
-          return _FAILURE_;
-        }
-
 
         if (n < 2.0)
         {
@@ -3192,8 +3208,8 @@ int background_lingering_derivs(double tau, double* y,
             printf("H_prop = %.5e\n", H_prop);
             printf("--------------[POST->INFLATION]--------------\n");
             pba->flag_transitioned = _TRUE_;
-            //return _SUCCESS_;
-            return _FAILURE_;
+            return _SUCCESS_;
+            //return _FAILURE_;
         }
     }
 
