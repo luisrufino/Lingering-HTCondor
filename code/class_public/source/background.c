@@ -482,9 +482,7 @@ int background_functions(
 
     pvecback[pba->index_bg_a] = a;
     pvecback[pba->index_bg_H] = H_prop;
-    pvecback[pba->index_bg_time] = pvecback_B[pba->index_bi_time]; // ensures continuous age accumulation
-
-    //pvecback[pba->index_bg_H_prime] = H_prime_prop;
+    pvecback[pba->index_bg_time] = pvecback_B[pba->index_bi_time]; //ensures total cosmic age accumulates
 
     pvecback[pba->index_bg_rho_e] = rho_e_star * pow(a/pba->a_star, -n);
     pvecback[pba->index_bg_rho_s] = rho_s_star * pow(a/pba->a_star, -m);
@@ -523,9 +521,8 @@ int background_functions(
 
     pvecback[pba->index_bg_a] = a;
     pvecback[pba->index_bg_H] = H_prop;
-    pvecback[pba->index_bg_time] = pvecback_B[pba->index_bi_time]; // ensures continuous age accumulation
+    pvecback[pba->index_bg_time] = pvecback_B[pba->index_bi_time]; //ensures total cosmic age accumulates
     //pvecback[pba->index_bg_H_prime] = H_prime_prop;
-    //printf("Age of the univesre: Post -> Standard = %.5e Gyr\n", pba->age); 
 
     pvecback[pba->index_bg_rho_e] = rho_e_star * pow(a/pba->a_star, -n); // pvecback[pba->index_bg_rho_e] should be the tranition from exact to post. 
     pvecback[pba->index_bg_rho_s] = rho_s_star * pow(a/pba->a_star, -m);
@@ -967,20 +964,6 @@ int background_init(
                     ) {
 
   /** Summary: */
-  /* Starting off in the exact lingering phase (Luis Rufino 10-11-25)*/
-
-  // Always start fresh in the lingering phase
-  pba->bg_regime = bg_regime_lingering_exact;
-
-  // Reset transition-related quantities
-  pba->a_trans = 0.0;
-  pba->a_prime_trans = 0.0;
-  pba->tau_trans = 0.0;
-  pba->time_trans = 0.0;
-  pba->H_trans = 0.0;
-  pba->H_prime_trans = 0.0;
-  pba->flag_transitioned = _FALSE_;
-
 
   /** - write class version */
   if (pba->background_verbose > 0) {
@@ -994,8 +977,6 @@ int background_init(
              "Shooting failed, try optimising input_get_guess(). Error message:\n\n%s",
              pba->shooting_error);
 
-
-
   /** - assign values to all indices in vectors of background quantities */
   class_call(background_indices(pba),
              pba->error_message,
@@ -1006,12 +987,33 @@ int background_init(
              pba->error_message,
              pba->error_message);
 
+  /** - initialize lingering -> post-lingering transition values (Luis Rufino 8-5-25)*/
+  pba->a_exact = 0.0;
+  pba->a_post  = 0.0;
+  pba->a_trans = 0.0;
+  pba->a_prime_trans = 0.0;
+  pba->tau_trans = 0.0;
+  pba->time_trans = 0.0;
+  pba->H_trans = 0.0;
+  pba->H_prime_trans = 0.0;
+  pba->flag_transitioned = _FALSE_;
+
+  pba->ling_N_alloc = LINGER_INIT_CAP;
+  pba->ling_N_used  = 0;
+  pba->ling_min_deta = ppr->linger_min_deta; // currently set at 1e-3 in precision.h
+  pba->_ling_last_tau = -1e300; // the last τ at which we wrote a row.
+
+  class_alloc(pba->ling_tau, pba->ling_N_alloc*sizeof(double), pba->error_message);
+  class_alloc(pba->ling_a, pba->ling_N_alloc*sizeof(double), pba->error_message);
+  class_alloc(pba->ling_H, pba->ling_N_alloc*sizeof(double), pba->error_message);
+  class_alloc(pba->ling_eps, pba->ling_N_alloc*sizeof(double), pba->error_message);
 
   /** - integrate the background over log(a), allocate and fill the background table */
   class_call(background_solve(ppr,pba),
              pba->error_message,
              pba->error_message);
-
+  if (pba->background_verbose > 0)
+    printf("[LINGERING] captured %d rows\n", pba->ling_N_used); // Sanity check. 
   /** - find and store a few derived parameters at radiation-matter equality */
   class_call(background_find_equality(ppr,pba),
              pba->error_message,
@@ -1021,6 +1023,28 @@ int background_init(
   class_call(background_output_budget(pba),
              pba->error_message,
              pba->error_message);
+
+  // Print statments for debugging
+  if (pba->background_verbose > 0)
+  {
+    printf("[BACKGROUND_INIT][LINGERING] captured %d background samples\n",
+            pba->ling_N_used);
+    FILE *f = fopen("ling_background_samples.dat","w");
+    if (f)
+    {
+      for (int i=0;i<pba->ling_N_used;i++)
+        fprintf(f,"%.15e %.15e %.15e %.15e\n",
+                pba->ling_tau[i], pba->ling_a[i],
+                pba->ling_H[i], pba->ling_eps[i]);
+      fclose(f);
+      printf("[BACKGROUND_INIT][LINGERING] wrote ling_background_samples.dat\n");
+    }
+    else
+    {
+      printf("[BACKGROUND_INIT][LINGERING] could not open ling_background_samples.dat for writing\n");
+    }
+  }
+
 
 
   pba->is_allocated = _TRUE_;
@@ -1041,6 +1065,12 @@ int background_free(
                     struct background *pba
                     ) 
 {
+  if (pba->ling_tau)  free(pba->ling_tau);
+  if (pba->ling_a)    free(pba->ling_a);
+  if (pba->ling_H)    free(pba->ling_H);
+  if (pba->ling_eps)  free(pba->ling_eps);
+  pba->ling_tau = pba->ling_a = pba->ling_H = pba->ling_eps = NULL;
+  pba->ling_N_alloc = pba->ling_N_used = 0;
 
   class_call(background_free_noinput(pba),
              pba->error_message,
@@ -1283,13 +1313,24 @@ int background_indices(
      normal vector */
 
   /* Adding exotic fluid and standard fluid for lingering phases*/
-  class_define_index(pba->index_bg_rho_s, _TRUE_, index_bg, 1);
-  class_define_index(pba->index_bg_p_s, _TRUE_, index_bg, 1);
-  class_define_index(pba->index_bg_rho_e, _TRUE_, index_bi, 1);
-  class_define_index(pba->index_bg_rho_e, _TRUE_, index_bi, 1);
+  if (pba->bg_regime == bg_regime_lingering_exact)
+  {
+    class_define_index(pba->index_bg_rho_s, _TRUE_, index_bg, 1);
+    class_define_index(pba->index_bg_p_s, _TRUE_, index_bg, 1);
+    //class_define_index(pba->index_bi_rho_s, _TRUE_, index_bi, 1);
+    //class_define_index(pba->index_bi_rho_e, _TRUE_, index_bi, 1);
+  }
 
+  //class_define_index(pba->index_bg_rho_s, bg_regime == bg_regime_lingering_exact, index_bg, 1); // Only added if you want the exotic fluid 
+  //class_define_index(pba->index_bg_p_s, bg_regime == bg_regime_lingering_exact, index_bg, 1);
+  class_define_index(pba->index_bg_rho_e, pba->has_exotic, index_bg, 1);
+  class_define_index(pba->index_bg_p_e, pba->has_exotic, index_bg, 1);
   /*    */
   /*    */
+
+  /* - index for exotic fluid density and pressure (Luis Rufino, 6-10-25) */
+  class_define_index(pba->index_bg_rho_e, pba->has_exotic, index_bg, 1);
+  class_define_index(pba->index_bg_p_e,   pba->has_exotic, index_bg, 1);
 
 
   /* - end of indices in the normal vector of background values */
@@ -1398,7 +1439,6 @@ int background_indices(
 
   /* -> end of indices in the vector of variables to integrate */
   pba->bi_size = index_bi;
-  printf("[BACKGROUND_INDEX] Final pba->bi_size = %d\n", pba->bi_size);
 
   return _SUCCESS_;
 
@@ -2125,23 +2165,7 @@ int background_solve(
   // conformal time range (Luis Rufino)
 
   double tau_ini;
-  double tau_final;
-  double tau_step = 10; // increas tau for integration
-
-  /* -------------------------------------------------------------------- */
-  /* [COBAYA SAFETY RESET] Clear any stale transition values between runs */
-  /* -------------------------------------------------------------------- */
-  pba->a_exact         = 0.0;
-  pba->a_post          = 0.0;
-  pba->a_trans         = 0.0;
-  pba->a_prime_trans   = 0.0;
-  pba->tau_trans       = 0.0;
-  pba->time_trans      = 0.0;
-  pba->H_trans         = 0.0;
-  pba->H_prime_trans   = 0.0;
-  pba->flag_transitioned = _FALSE_;
-  pba->bg_regime = bg_regime_lingering_exact;
-
+  double tau_final = 1000.0;  
 
   /** - setup background workspace */
   bpaw.pba = pba;
@@ -2201,75 +2225,62 @@ int background_solve(
   {
       if (pba->bg_regime == bg_regime_lingering_exact)
       {
-        tau_ini = 0;
-        tau_final = tau_ini + tau_step;
         int status; 
-        while (pba->flag_transitioned == _FALSE_)
-        {
-            status = generic_evolver(background_lingering_derivs,
-                                   0.0,
-                                   tau_final,
-                                   pvecback_integration,
-                                   used_in_output,
-                                   pba->bi_size,
-                                   &bpaw,
-                                   ppr->tol_background_integration,
-                                   ppr->smallest_allowed_variation,
-                                   background_timescale,  // probably fine to keep this...
-                                   ppr->background_integration_stepsize,
-                                   pba->tau_table,
-                                   pba->bt_size,
-                                   background_sources,
-                                   NULL,
-                                   pba->error_message);
-            if (status == _FAILURE_)
-            {
-                printf("[ERROR] Integration failure before transition.\n");
-                return _FAILURE_;
-            }
-            /* If derivative triggered transition (Δ > 1), stop growing τ */
-            if (pba->flag_transitioned == _TRUE_) break;
-            /* otherwise extend window and continue */
-            tau_ini   = tau_final;
-            tau_final += tau_step;
-            if (tau_final > 1000.0) {
-                printf("[LINGERING] Reached τ=1000 with no transition.\n");
-                return _FAILURE_;
-            }
-        }
-        printf("[EXACT LINGERING][BACKGROUND SOVLE] Transition flag hit!\n");
-        pvecback_integration[pba->index_bi_tau]  = pba->tau_trans;
-        pvecback_integration[pba->index_bi_time] = pba->time_trans;
-        pvecback_integration[pba->index_bi_a] = pba->a_trans;
-        pvecback_integration[pba->index_bi_a_prime] = pba->a_prime_trans;
-        tau_ini = pba->tau_trans;
-        printf("tau_ini = %.5e\n", tau_ini);
-        printf("a: %.5e, a' = %.5e\n"
-             ,pvecback_integration[pba->index_bi_a], 
-              pvecback_integration[pba->index_bi_a_prime]);
-       /* -> age in Gyears */
-        pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
-        printf("[AGE] Phase end at tau=%.3e: t = %.5e (Mpc) → %.5e Gyr\n",
-                pba->tau_trans,
-                pvecback_integration[pba->index_bi_time],
-                pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_);
-        printf("--------------------------------------------------------\n");
+        status = generic_evolver(background_lingering_derivs,
+                               0.0,
+                               tau_final,
+                               pvecback_integration,
+                               used_in_output,
+                               pba->bi_size,
+                               &bpaw,
+                               ppr->tol_background_integration,
+                               ppr->smallest_allowed_variation,
+                               background_timescale,  // probably fine to keep this...
+                               ppr->background_integration_stepsize,
+                               pba->tau_table,
+                               pba->bt_size,
+                               background_sources,
+                               NULL,
+                               pba->error_message);
 
-        pba->bg_regime = bg_regime_post_lingering;
-        pba->flag_transitioned = _FALSE_;
-        continue;
+        if (status == _FAILURE_)
+        {
+          printf("[EXACT LINGERING][BACKGROUND SOVLE] Transition flag hit!\n");
+          printf("--------------------------------------------------------\n");
+          pvecback_integration[pba->index_bi_tau]  = pba->tau_trans;
+          pvecback_integration[pba->index_bi_time] = pba->time_trans;
+          pvecback_integration[pba->index_bi_a] = pba->a_trans;
+          pvecback_integration[pba->index_bi_a_prime] = pba->a_prime_trans;
+          tau_ini = pba->tau_trans;
+          printf("tau_ini = %.5e\n", tau_ini);
+          printf("a: %.5e, a' = %.5e\n"
+               ,pvecback_integration[pba->index_bi_a], 
+                pvecback_integration[pba->index_bi_a_prime]);
+          /* -> age in Gyears */
+          pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
+          pba->conformal_age = pvecback_integration[pba->index_bi_tau];
+          printf("[AGE] Phase end at tau=%.3e: t = %.5e (Mpc) → %.5e Gyr\n",
+          pba->tau_trans,
+          pvecback_integration[pba->index_bi_time],
+          pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_);
+          printf("--------------------------------------------------------\n");
+          pba->bg_regime = bg_regime_post_lingering;
+          pba->flag_transitioned = _FALSE_;
+          continue;
+        }
+        else
+        {
+            // real error: print and exit
+            class_stop("Integration failed in lingering phase: %s", pba->error_message);
+            return _FAILURE_;
+        }
       }
 
       else if (pba->bg_regime == bg_regime_post_lingering)
       {
-        printf("[POST-LINGERING][BACKGROUND SOLVE]\n");
-        tau_ini = pba->tau_trans;
-        tau_final = tau_ini + tau_step;
-        int status;
-
-        while(pba->flag_transitioned == _FALSE_)
-        {
-           status = generic_evolver(background_lingering_derivs,
+         printf("[POST LINGERING][BACKGROUND SOLVE]\n");
+         int status;
+         status = generic_evolver(background_lingering_derivs,
                                tau_ini,
                                tau_final,
                                pvecback_integration,
@@ -2286,47 +2297,38 @@ int background_solve(
                                NULL,
                                pba->error_message);
 
-           if (status == _FAILURE_) {
-             printf("[ERROR] Post-lingering integration failure.\n");
-             return _FAILURE_;
-            }
 
-           if (pba->flag_transitioned == _TRUE_) break;
+        if(status == _FAILURE_)
+        {
+            printf("[POST LINGERING][BACKGROUND SOLVE] Transition flag hit!\n");
+            printf("Moving to standard inflation\n");
+            printf("tau_ini = %.5e\n", tau_ini);
+            printf("a: %.5e, a' = %.5e\n"
+               ,pvecback_integration[pba->index_bi_a], 
+                pvecback_integration[pba->index_bi_a_prime]);
 
-           tau_ini   = tau_final;
-           tau_final += tau_step;
-           if (tau_final > 1000.0) {
-             printf("[POST-LINGERING] Reached τ=1000 with no transition.\n");
-             return _FAILURE_;
-            }
+            /* Setting up the transition (Luis Rufino, 9-4-25) */
+            printf("------------Setting up transition--------\n");
+            pvecback_integration[pba->index_bi_tau] = pba->tau_trans;
+            pvecback_integration[pba->index_bi_time] = pba->time_trans;
+            pvecback_integration[pba->index_bi_a] = pba->a_trans;
+            pvecback_integration[pba->index_bi_a_prime]  = pba->a_prime_trans;
+            /* -> age in Gyears */
+            pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
+            pba->conformal_age = pvecback_integration[pba->index_bi_tau];
+            printf("[AGE] Phase end at tau=%.3e: t = %.5e (Mpc) → %.5e Gyr\n",
+            pba->tau_trans,
+            pvecback_integration[pba->index_bi_time],
+            pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_);
+            loga_ini = log(pba->a_trans); // Working
+            printf("H_prop = %.5e\n", pba->H_trans/pba->a_trans);
+            printf("-----------------------------------------\n");
+            pba->bg_regime = bg_regime_standard;
+            continue;
         }
-
-
-        printf("[POST LINGERING][BACKGROUND SOLVE] Transition flag hit!\n");
-        printf("Moving to standard inflation\n");
-        printf("tau_ini = %.5e\n", tau_ini);
-        printf("a: %.5e, a' = %.5e\n"
-           ,pvecback_integration[pba->index_bi_a], 
-            pvecback_integration[pba->index_bi_a_prime]);
-
-        /* Setting up the transition (Luis Rufino, 9-4-25) */
-        printf("------------Setting up transition--------\n");
-        pvecback_integration[pba->index_bi_tau] = pba->tau_trans;
-        pvecback_integration[pba->index_bi_time] = pba->time_trans;
-        pvecback_integration[pba->index_bi_a] = pba->a_trans;
-        pvecback_integration[pba->index_bi_a_prime]  = pba->a_prime_trans;
-        /* -> age in Gyears */
-        pba->age = pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_;
-        printf("[AGE] Phase end at tau=%.3e: t = %.5e (Mpc) → %.5e Gyr\n",
-        pba->tau_trans,
-        pvecback_integration[pba->index_bi_time],
-        pvecback_integration[pba->index_bi_time]/_Gyr_over_Mpc_);
-        loga_ini = log(pba->a_trans); // Working
-        printf("H_prop = %.5e\n", pba->H_trans/pba->a_trans);
-        printf("-----------------------------------------\n");
-        pba->bg_regime = bg_regime_standard; // While loop ends here
-        pba->flag_transitioned == _FALSE_; // added this to test for seg faults
-        continue;
+        else{
+        class_stop("Integration failed in post lingering phase: %s", pba->error_message);
+        }
       }
   }
 
@@ -2343,7 +2345,7 @@ int background_solve(
        exp(pba->loga_table[0]));
   printf("[BACKGROUND_SOLVE][HANDOFF]\ntau_trans = %.5e, a_trans = %.5e, a'_trans = %.5e\nH = %.5e , H' = %.5e\n",
        pba->tau_trans,pba->a_trans,  pba->a_prime_trans, pba->H_trans, pba->H_prime_trans);
-  printf("[BACKGROUND_SOLVE][HANDOFF] H_prop = %.5e, Delta_e = %.10e\n", pba->H_trans/pba->a_trans, pba->Delta_e);
+  printf("[BACKGROUND_SOLVE][HANDOFF] H_prop = %.5e, Delta_e = %.5e\n", pba->H_trans/pba->a_trans, pba->Delta_e);
 
   class_call(generic_evolver(background_derivs,
                              loga_ini,
@@ -2571,29 +2573,11 @@ int background_initial_conditions(
     pvecback_integration[pba->index_bi_time] = 0.0;   // start cosmic time
     // Luis Rufino 9-9-25
 
-    printf("[INIT_CONDITIONS] [DEBUG] ENTERED LINGERING BLOCK\n");
+    printf("[INIT_CONDITIONS] [DEBUG] ENTERED LINGERING BLOCK");
     printf("[CLASS] [DEBUG] a_star = %.2e\n", pba->a_star);
     printf("[INIT_CONDITIONS] [DEBUG] Delta: %.5e, Delta_prime: %.5e\n",
             pvecback_integration[pba->index_bi_Delta], 
             pvecback_integration[pba->index_bi_Delta_prime]);
-    printf("[DEBUG IC] bi_size=%d, index_bi_a=%d, pvecback_integration=%p\n",
-       pba->bi_size, pba->index_bi_a, (void*)pvecback_integration);
-
-    /* ------------------------------------------------------------ */
-    /* [COBAYA REENTRY SAFETY GUARD for pvecback]                   */
-    /* ------------------------------------------------------------ */
-    printf("[DEBUG IC2] bg_size=%d, index_bg_H=%d, pvecback=%p, error_message=%p\n",
-       pba->bg_size, pba->index_bg_H, (void*)pvecback, (void*)pba->error_message);
-
-    if (pvecback == NULL) {
-      class_alloc(pvecback, pba->bg_size * sizeof(double), pba->error_message);
-      for (int i = 0; i < pba->bg_size; i++) pvecback[i] = 0.0;
-    }
-
-    if (pba->index_bg_H < 0 || pba->index_bg_H >= pba->bg_size) {
-      class_stop("Invalid index_bg_H = %d (bg_size = %d)", pba->index_bg_H, pba->bg_size);
-    }
-
     if (pba->background_verbose > 0) {
       printf("[CLASS] Overriding initial conditions to start in lingering phase.\n");
       printf("         a_ini = %.1e\n", a);
@@ -3022,7 +3006,6 @@ int background_lingering_derivs(double tau, double* y,
     pba =  pbpaw->pba;
     pvecback = pbpaw->pvecback;
 
-
     double m = pba->m_s;
     double n = pba->n_e;
     double w_s = pba->w_s;
@@ -3103,6 +3086,16 @@ int background_lingering_derivs(double tau, double* y,
         // printf("[DEBUG LINGERING] H_conf = %.5e H'_conf = %.5e a = %.5e a' = %.5e\n", 
         // H_conformal,H_prime, a, a_prime);
 
+        // Populate the background quantities, and store them in each pvecback array 
+//        pvecback[pba->index_bg_rho_e] = rho_e_star * pow(a, -n);
+//        pvecback[pba->index_bg_rho_s] = rho_s_star * pow(a, -m);
+//        rho_tot_ling += pvecback[pba->index_bg_rho_e] + pvecback[pba->index_bg_rho_s];
+//
+//
+//        pvecback[pba->index_bg_H] = H_prop;
+//        pvecback[pba->index_bg_H_prime] = H_prime_prop;
+//        pvecback[pba->index_bg_a] = a;
+//
         class_call(background_functions(pba, a, y, normal_info, pvecback),
              pba->error_message,
              error_message);
@@ -3130,8 +3123,8 @@ int background_lingering_derivs(double tau, double* y,
             printf("[DEBUG LINGERING] Transition set: flag_transitioned = %d\n", pba->flag_transitioned);
             printf("----------------------------------------------\n");
             //printf("[DEBUG LINGERING] bg_regime = %d\n", pba->bg_regime);
-            return _SUCCESS_;
-            //return _FAILURE_;
+            //return _SUCCESS_;
+            return _FAILURE_;
        }
 
     }
@@ -3142,7 +3135,6 @@ int background_lingering_derivs(double tau, double* y,
         double a = y[pba->index_bi_a];
         double aprime = y[pba->index_bi_a_prime];
         double adprime, rho_e_trans, rho_s_trans;
-
         if (n < 2.0)
         {
             /* Pre-factor C */
@@ -3208,8 +3200,8 @@ int background_lingering_derivs(double tau, double* y,
             printf("H_prop = %.5e\n", H_prop);
             printf("--------------[POST->INFLATION]--------------\n");
             pba->flag_transitioned = _TRUE_;
-            return _SUCCESS_;
-            //return _FAILURE_;
+            //return _SUCCESS_;
+            return _FAILURE_;
         }
     }
 
@@ -3507,10 +3499,7 @@ int background_output_budget(
       class_print_species("Decaying Cold Dark Matter",dcdm);
       budget_matter+=pba->Omega0_dcdm;
     }
-    if (pba->has_exotic == _TRUE_){
-      class_print_species("Exotic Fluid", e); // e For exotic
-      budget_other += pba->Omega0_e;
-    }
+
     if (pba->N_ncdm > 0) {
       printf(" ---> Non-Cold Dark Matter Species (incl. massive neutrinos)\n");
     }
@@ -3540,6 +3529,10 @@ int background_output_budget(
 
     if ((pba->has_lambda == _TRUE_) || (pba->has_fld == _TRUE_) || (pba->has_scf == _TRUE_) || (pba->has_curvature == _TRUE_)) {
       printf(" ---> Other Content \n");
+    }
+    if (pba->has_exotic == _TRUE_){
+        class_print_species("Exotic Fluid", e); // e For exotic
+        budget_other += pba->Omega0_e;
     }
     if (pba->has_lambda == _TRUE_) {
       class_print_species("Cosmological Constant",lambda);

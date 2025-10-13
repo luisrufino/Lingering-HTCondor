@@ -25,6 +25,7 @@ info = {
         "a_star": {"value": 1e-15},
         "n_e": {"value": 1.0},
         "m_s": {"value": 3.0},
+        "bg_regime": {"value": 1},
         "Delta_e": {"prior": {"min": 1e-3, "max": 0.24}, "proposal": 0.01},
         "Delta_s": {"prior": {"min": 1e-4, "max": 0.05}, "proposal": 0.001},
         "Delta_rho_s": {"prior": {"min": 1e-4, "max": 0.05}, "proposal": 0.001},

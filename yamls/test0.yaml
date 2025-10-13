@@ -1,6 +1,6 @@
 theory:
   classy:
-    stop_at_error: False
+    stop_at_error: True
     path: /home/lerufino/PlanckData/lingering_sims/background_runs/code/class_public
     extra_args:
       output: "tCl"
@@ -20,6 +20,9 @@ params:
       loc: 0.05
     proposal: 0.005
     latex: \Omega_\mathrm{e}
+  bg_regime:
+    value: 1
+
   a_star:
     value: 1e-15
     latex: a_{*}}
