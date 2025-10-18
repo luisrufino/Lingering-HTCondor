@@ -459,10 +459,6 @@ struct background_parameters_for_distributions {
 extern "C" {
 #endif
 
-  static int background_ling_push(struct background *pba,
-                                  double tau,
-                                  double a, double H,
-                                  double eps);
 
   int background_at_z(
                       struct background *pba,

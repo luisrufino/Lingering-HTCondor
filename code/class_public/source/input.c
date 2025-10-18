@@ -2345,9 +2345,10 @@ int input_read_parameters_species(struct file_content * pfc,
   int flag1, flag2, flag3, flag4;            // flag4 used for a_star or other variables in lingering universe
   double param1, param2, param3, param4;     // param4 used for a_star
 
-  double param_n_e, param_m_s, param_Delta_e, param_Delta_s, param_Delta_rho_s, param_Delta_eta;
+  double param_n_e, param_m_s, param_Delta_e, param_Delta_s, param_Delta_rho_s;
+  double param_Delta_eta;
   int flag_Delta_eta, flag_Delta_rho_s, flag_Delta_s, flag_Delta_e, flag_m_s, flag_n_e;
-  int param_s_map, flag_s_map;
+  int param_s_map, flag_s_map, flag_regime, param_regime;
 
 
   char string1[_ARGUMENT_LENGTH_MAX_];
@@ -3171,7 +3172,10 @@ int input_read_parameters_species(struct file_content * pfc,
 
   class_call(parser_read_double(pfc, "Delta_eta", &param_Delta_eta, &flag_Delta_eta, errmsg),
             errmsg, errmsg);
-
+  class_call(parser_read_int(pfc, "bg_regime", &param_regime, &flag_regime, errmsg), 
+            errmsg, errmsg);
+  pba->bg_regime = (flag_regime == _FALSE_) ? param_regime : 0;
+  //printf("[CLASS][INPUT] bg_regime not found. Setting bg_regime = 0\n");
 
   /* Read the has_exact_ling flag from the input file, which specifies
      whether to use the exact-lingering analytic solution. */
@@ -3180,6 +3184,8 @@ int input_read_parameters_species(struct file_content * pfc,
   /* If Omega_e was provided (flag1 == _TRUE_), then activate the exotic fluid */
   if (flag1 == _TRUE_) {
     pba->Omega0_e = param1;
+
+    pba->bg_regime = (flag_regime == _TRUE_) ? param_regime : 1;
 
     /* Use provided n_e if available, otherwise default to n_e = 2.0 */
     pba->n_e = (flag_n_e == _TRUE_) ? param_n_e : 2.0;
@@ -3193,7 +3199,8 @@ int input_read_parameters_species(struct file_content * pfc,
     /* Activate the exotic fluid flag */
     pba->has_exotic = _TRUE_;
 
-    printf("[CLASS] Exotic fluid enabled:\n");
+    printf("[CLASS][INPUT] Exotic fluid enabled:\n");
+    printf("  bg_regime = %d\n", pba->bg_regime);
     printf("  Omega0_e  = %e\n", pba->Omega0_e);
     printf("  n_e       = %f\n", pba->n_e);
     printf("  w_e       = %f\n", pba->w_e);

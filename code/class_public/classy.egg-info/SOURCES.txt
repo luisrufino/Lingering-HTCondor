@@ -103,6 +103,7 @@ python/extract_errors.py
 python/interface_generator.py
 python/setup.py
 python/test_class.py
+source/.background.c.swp
 source/background.c
 source/distortions.c
 source/fourier.c

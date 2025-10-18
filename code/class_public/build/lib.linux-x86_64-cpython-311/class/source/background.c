@@ -129,39 +129,6 @@
  * @return the error status
  */
 
-/* Luis Rufino (9-20-25) */
-static int background_ling_push(struct background *pba,
-                                double tau, double a, double H, double eps)
-{
-  /* Optional down-sampling in conformal time */
-  if (pba->ling_N_used > 0) 
-  {
-    double dt = tau - pba->_ling_last_tau;
-    if (dt < pba->ling_min_deta) return _SUCCESS_;
-  }
-
-  /* Grow buffers if needed */
-  if (pba->ling_N_used == pba->ling_N_alloc)
-  {
-    int newcap = (int)(pba->ling_N_alloc*1.5) + 1024; // increasing array size
-
-    class_realloc(pba->ling_tau, newcap*sizeof(double), pba->error_message);
-    class_realloc(pba->ling_a, newcap*sizeof(double), pba->error_message);
-    class_realloc(pba->ling_H, newcap*sizeof(double), pba->error_message);
-    class_realloc(pba->ling_eps, newcap*sizeof(double), pba->error_message);
-
-    pba->ling_N_alloc = newcap;
-  }
-
-  int i = pba->ling_N_used++;
-  pba->ling_tau[i] = tau;
-  pba->ling_a[i] = a;
-  pba->ling_H[i] = H;
-  pba->ling_eps[i] = eps;
-  pba->_ling_last_tau = tau;
-  return _SUCCESS_;
-}
-/* Luis Rufino (9-20-25) */
 
 int background_at_z(
                     struct background *pba,
@@ -450,12 +417,6 @@ int background_functions(
   double rho_e = 0.0;
   double rho_s = 0.0;
 
-  static FILE *energy_file = NULL;
-
-  if (energy_file == NULL) {
-    energy_file = fopen("energy_densities.txt","w");
-    fprintf(energy_file, "# a   H   rho_e   rho_s   rho_g   rho_b   rho_cdm   rho_lambda   rho_tot\n");
-  }
 
   /** - initialize local variables */
   rho_tot = 0.;
@@ -491,18 +452,6 @@ int background_functions(
 
     pvecback[pba->index_bg_rho_tot] = rho_tot;
     pvecback[pba->index_bg_p_tot]   = p_tot; // fill if you track pressure
-    fprintf(energy_file,
-               "%.8e %.8e %.8e %.8e %.8e %.8e %.8e %.8e %.8e\n",
-               a,
-               pvecback[pba->index_bg_H],
-               pvecback[pba->index_bg_rho_e],
-               rho_s,
-               pvecback[pba->index_bg_rho_g],
-               pvecback[pba->index_bg_rho_b],
-               (pba->has_cdm ? pvecback[pba->index_bg_rho_cdm] : 0.0),
-               (pba->has_lambda ? pvecback[pba->index_bg_rho_lambda] : 0.0),
-               pvecback[pba->index_bg_rho_tot]);
-
 
     return _SUCCESS_;
   }
@@ -531,19 +480,6 @@ int background_functions(
 
     pvecback[pba->index_bg_rho_tot] = rho_tot;
     pvecback[pba->index_bg_p_tot] = p_tot;
-
-    fprintf(energy_file,
-                "%.8e %.8e %.8e %.8e %.8e %.8e %.8e %.8e %.8e\n",
-                a,
-                pvecback[pba->index_bg_H],
-                pvecback[pba->index_bg_rho_e],
-                rho_s,
-                pvecback[pba->index_bg_rho_g],
-                pvecback[pba->index_bg_rho_b],
-                (pba->has_cdm ? pvecback[pba->index_bg_rho_cdm] : 0.0),
-                (pba->has_lambda ? pvecback[pba->index_bg_rho_lambda] : 0.0),
-                pvecback[pba->index_bg_rho_tot]);
-
 
 
     return _SUCCESS_;
@@ -785,18 +721,6 @@ int background_functions(
         /* one can put other variables here */
         /*  */
         /*  */
-       fprintf(energy_file,
-              "%.8e %.8e %.8e %.8e %.8e %.8e %.8e %.8e %.8e\n",
-              a,
-              pvecback[pba->index_bg_H],
-              pvecback[pba->index_bg_rho_e],
-              rho_s,
-              pvecback[pba->index_bg_rho_g],
-              pvecback[pba->index_bg_rho_b],
-              (pba->has_cdm ? pvecback[pba->index_bg_rho_cdm] : 0.0),
-              (pba->has_lambda ? pvecback[pba->index_bg_rho_lambda] : 0.0),
-              pvecback[pba->index_bg_rho_tot]);
-
       }
 
       return _SUCCESS_;
@@ -970,6 +894,24 @@ int background_init(
     printf("Running CLASS version %s\n",_VERSION_);
     printf("Computing background\n");
   }
+  printf("[INIT] bg_regime = %d, Omega_e=%.5e, n_e=%.3f, m_s=%.3f\n",
+       pba->bg_regime, pba->Omega0_e, pba->n_e, pba->m_s);
+  /** - initialize lingering -> post-lingering transition values (Luis Rufino 8-5-25)*/
+  //pba->a_exact = 0.0;
+  //pba->a_post  = 0.0;
+  //pba->a_trans = 0.0;
+  //pba->a_prime_trans = 0.0;
+  //pba->tau_trans = 0.0;
+  //pba->time_trans = 0.0;
+  //pba->H_trans = 0.0;
+  //pba->H_prime_trans = 0.0;
+  //pba->age = 0.0;
+  //pba->Delta_e = 0.0;
+  //pba->Delta_s = 0.0;
+  //pba->Delta_rho_s = 0.0;
+  pba->flag_transitioned = _FALSE_;
+
+
 
   /** - if shooting failed during input, catch the error here */
   class_test(pba->shooting_failed == _TRUE_,
@@ -987,33 +929,13 @@ int background_init(
              pba->error_message,
              pba->error_message);
 
-  /** - initialize lingering -> post-lingering transition values (Luis Rufino 8-5-25)*/
-  pba->a_exact = 0.0;
-  pba->a_post  = 0.0;
-  pba->a_trans = 0.0;
-  pba->a_prime_trans = 0.0;
-  pba->tau_trans = 0.0;
-  pba->time_trans = 0.0;
-  pba->H_trans = 0.0;
-  pba->H_prime_trans = 0.0;
-  pba->flag_transitioned = _FALSE_;
 
-  pba->ling_N_alloc = LINGER_INIT_CAP;
-  pba->ling_N_used  = 0;
-  pba->ling_min_deta = ppr->linger_min_deta; // currently set at 1e-3 in precision.h
-  pba->_ling_last_tau = -1e300; // the last τ at which we wrote a row.
-
-  class_alloc(pba->ling_tau, pba->ling_N_alloc*sizeof(double), pba->error_message);
-  class_alloc(pba->ling_a, pba->ling_N_alloc*sizeof(double), pba->error_message);
-  class_alloc(pba->ling_H, pba->ling_N_alloc*sizeof(double), pba->error_message);
-  class_alloc(pba->ling_eps, pba->ling_N_alloc*sizeof(double), pba->error_message);
 
   /** - integrate the background over log(a), allocate and fill the background table */
   class_call(background_solve(ppr,pba),
              pba->error_message,
              pba->error_message);
-  if (pba->background_verbose > 0)
-    printf("[LINGERING] captured %d rows\n", pba->ling_N_used); // Sanity check. 
+
   /** - find and store a few derived parameters at radiation-matter equality */
   class_call(background_find_equality(ppr,pba),
              pba->error_message,
@@ -1023,28 +945,6 @@ int background_init(
   class_call(background_output_budget(pba),
              pba->error_message,
              pba->error_message);
-
-  // Print statments for debugging
-  if (pba->background_verbose > 0)
-  {
-    printf("[BACKGROUND_INIT][LINGERING] captured %d background samples\n",
-            pba->ling_N_used);
-    FILE *f = fopen("ling_background_samples.dat","w");
-    if (f)
-    {
-      for (int i=0;i<pba->ling_N_used;i++)
-        fprintf(f,"%.15e %.15e %.15e %.15e\n",
-                pba->ling_tau[i], pba->ling_a[i],
-                pba->ling_H[i], pba->ling_eps[i]);
-      fclose(f);
-      printf("[BACKGROUND_INIT][LINGERING] wrote ling_background_samples.dat\n");
-    }
-    else
-    {
-      printf("[BACKGROUND_INIT][LINGERING] could not open ling_background_samples.dat for writing\n");
-    }
-  }
-
 
 
   pba->is_allocated = _TRUE_;
@@ -1313,17 +1213,10 @@ int background_indices(
      normal vector */
 
   /* Adding exotic fluid and standard fluid for lingering phases*/
-  if (pba->bg_regime == bg_regime_lingering_exact)
-  {
-    class_define_index(pba->index_bg_rho_s, _TRUE_, index_bg, 1);
-    class_define_index(pba->index_bg_p_s, _TRUE_, index_bg, 1);
-    //class_define_index(pba->index_bi_rho_s, _TRUE_, index_bi, 1);
-    //class_define_index(pba->index_bi_rho_e, _TRUE_, index_bi, 1);
-  }
+  class_define_index(pba->index_bg_p_s, _TRUE_, index_bg, 1);
+  class_define_index(pba->index_bg_rho_s, _TRUE_, index_bi, 1);
 
-  //class_define_index(pba->index_bg_rho_s, bg_regime == bg_regime_lingering_exact, index_bg, 1); // Only added if you want the exotic fluid 
-  //class_define_index(pba->index_bg_p_s, bg_regime == bg_regime_lingering_exact, index_bg, 1);
-  class_define_index(pba->index_bg_rho_e, pba->has_exotic, index_bg, 1);
+  class_define_index(pba->index_bg_rho_e, pba->has_exotic, index_bg, 1); // Omega0_e > 0
   class_define_index(pba->index_bg_p_e, pba->has_exotic, index_bg, 1);
   /*    */
   /*    */
@@ -2278,7 +2171,18 @@ int background_solve(
 
       else if (pba->bg_regime == bg_regime_post_lingering)
       {
+         ppr->background_integration_stepsize = 1e-5;
+         printf("background_integration_stepsize = %.5e\n", ppr->background_integration_stepsize);
          printf("[POST LINGERING][BACKGROUND SOLVE]\n");
+         printf("Starting ODE solver at tau_ini = %.5e\n", tau_ini);
+         printf("[DEBUG CHECK] a=%e  a'=%e  tau=%e  t=%e\n",
+            pvecback_integration[pba->index_bi_a],
+            pvecback_integration[pba->index_bi_a_prime],
+            pvecback_integration[pba->index_bi_tau],
+            pvecback_integration[pba->index_bi_time]);
+         fflush(stdout);
+
+         ppr->background_evolver = rk;
          int status;
          status = generic_evolver(background_lingering_derivs,
                                tau_ini,
@@ -2302,7 +2206,7 @@ int background_solve(
         {
             printf("[POST LINGERING][BACKGROUND SOLVE] Transition flag hit!\n");
             printf("Moving to standard inflation\n");
-            printf("tau_ini = %.5e\n", tau_ini);
+            printf("tau_trans = %.5e\n", pba->tau_trans);
             printf("a: %.5e, a' = %.5e\n"
                ,pvecback_integration[pba->index_bi_a], 
                 pvecback_integration[pba->index_bi_a_prime]);
@@ -2324,6 +2228,7 @@ int background_solve(
             printf("H_prop = %.5e\n", pba->H_trans/pba->a_trans);
             printf("-----------------------------------------\n");
             pba->bg_regime = bg_regime_standard;
+            ppr->background_evolver = ndf15;
             continue;
         }
         else{
@@ -2545,14 +2450,7 @@ int background_initial_conditions(
        This could happen for some WDM models.
   */
 
-//  class_alloc(y, pba->bi_size * sizeof(double), pba->error_message);
-//
-//  if (pba->bg_regime == bg_regime_lingering_exact)
-//  {
-//    y[pba->index_bi_Delta] = 0.0;
-//    y[pba->index_bi_Delta_prime] = 0.01;
-//  }
-
+  pba->bg_regime = 1; //exact lingering
 
   if (pba->bg_regime == bg_regime_lingering_exact)
   {
@@ -3086,16 +2984,6 @@ int background_lingering_derivs(double tau, double* y,
         // printf("[DEBUG LINGERING] H_conf = %.5e H'_conf = %.5e a = %.5e a' = %.5e\n", 
         // H_conformal,H_prime, a, a_prime);
 
-        // Populate the background quantities, and store them in each pvecback array 
-//        pvecback[pba->index_bg_rho_e] = rho_e_star * pow(a, -n);
-//        pvecback[pba->index_bg_rho_s] = rho_s_star * pow(a, -m);
-//        rho_tot_ling += pvecback[pba->index_bg_rho_e] + pvecback[pba->index_bg_rho_s];
-//
-//
-//        pvecback[pba->index_bg_H] = H_prop;
-//        pvecback[pba->index_bg_H_prime] = H_prime_prop;
-//        pvecback[pba->index_bg_a] = a;
-//
         class_call(background_functions(pba, a, y, normal_info, pvecback),
              pba->error_message,
              error_message);
@@ -3140,7 +3028,9 @@ int background_lingering_derivs(double tau, double* y,
             /* Pre-factor C */
             double C = (m - 2.0) * (n - 4.0) * (1.0 + Delta_e)
                        / ((n - m) * 2.0 * pow(a_star, 2.0 - n));
-
+            printf("C = %.5e\n",C);
+            printf("a = %.5e\n",a);
+            printf("aprime = %.5e\n", aprime);
             /* Equation: a'' = -a + C * a^(3-n) */
             adprime = -a + C * pow(a, 3.0 - n);
         }
@@ -3195,8 +3085,8 @@ int background_lingering_derivs(double tau, double* y,
             pba->H_prime_trans = Hprime;
             printf("--------------[POST->INFLATION]--------------\n");
             printf("Transition triggered\n");
-            printf("tau = %.5e H = %.5e H' = %.5e, a = %.5e, a' = %.5e, epsilon = %.5e\n",
-                     tau_values, H_conformal, Hprime, a, aprime, epsilon);
+            printf("tau = %.5e time = %.5e H = %.5e H' = %.5e, a = %.5e, a' = %.5e, epsilon = %.5e\n",
+                     tau_values, pba->time_trans, H_conformal, Hprime, a, aprime, epsilon);
             printf("H_prop = %.5e\n", H_prop);
             printf("--------------[POST->INFLATION]--------------\n");
             pba->flag_transitioned = _TRUE_;
@@ -3316,29 +3206,6 @@ int background_derivs(
         written as \f$ d\phi/dlna = phi' / (aH) \f$ and \f$ d\phi'/dlna = -2*phi' - (a/H) dV \f$ */
     dy[pba->index_bi_phi_scf] = y[pba->index_bi_phi_prime_scf]/a/H;
     dy[pba->index_bi_phi_prime_scf] = - 2*y[pba->index_bi_phi_prime_scf] - a*dV_scf(pba,y[pba->index_bi_phi_scf])/H ;
-  }
-
-  // Writing  (Luis Rufino 8-20-25)
-  double tau_now = y[pba->index_bi_tau];
-
-  /* We already have a = exp(loga) and H from pvecback */
-  double a_now   = a;                             /* a = exp(loga) */
-  double H_now   = pvecback[pba->index_bg_H];     /* conformal H = a'/a */
-
-  /* If you don't have epsilon handy yet, pass a dummy like -1.0 */
-  double eps_now = -1.0;
-
-  /* Write one sample (throttled by linger_min_deta) */
-  int before = pba->ling_N_used;
-  class_call(background_ling_push(pba, tau_now, a_now, H_now, eps_now),
-               pba->error_message, error_message);
-
-  /* Tiny debug to prove it fired at least a few times */
-  if (pba->background_verbose > 1 && pba->ling_N_used > before &&
-        pba->ling_N_used <= 5)
-  {
-      printf("[LING] wrote row #%d at tau=%.6e a=%.3e H=%.3e\n",
-             pba->ling_N_used-1, tau_now, a_now, H_now);
   }
 
 
