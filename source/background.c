@@ -555,6 +555,31 @@ int background_functions(
     dp_dloga += (a*dw_over_da-3*(1+w_fld)*w_fld)*pvecback[pba->index_bg_rho_fld];
   }
 
+  /* Exotic lingering fluid with constant equation of state */
+  if (pba->has_exotic == _TRUE_) {
+    double rho_e = pba->Omega0_e * pow(pba->H0, 2) * pow(a, -pba->n_e);
+    double w_e = pba->w_e;
+    double p_e = w_e * rho_e;
+
+    pvecback[pba->index_bg_rho_e] = rho_e;
+    pvecback[pba->index_bg_p_e]   = p_e;
+
+    rho_tot += rho_e;
+    p_tot   += p_e;
+    /* dp_dloga = -n_e * w_e * rho_e for constant w */
+    dp_dloga += -pba->n_e * w_e * rho_e;
+
+    /* Classify: if w_e > 0, contributes to radiation; if w_e ~ 0, to matter */
+    if (pba->n_e >= 3.5) {
+      rho_r += rho_e;  /* radiation-like */
+    }
+    else if (pba->n_e >= 2.5) {
+      rho_m += rho_e;  /* matter-like */
+    }
+    /* else: dark-energy-like, doesn't contribute to rho_r or rho_m */
+  }
+
+
   /* relativistic neutrinos (and all relativistic relics) */
   if (pba->has_ur == _TRUE_) {
     pvecback[pba->index_bg_rho_ur] = pba->Omega0_ur * pow(pba->H0,2) / pow(a,4);
@@ -1102,6 +1127,10 @@ int background_indices(
      normal vector */
   /*    */
   /*    */
+  /* index for exotic lingering fluid density and pressure */
+  class_define_index(pba->index_bg_rho_e, pba->has_exotic, index_bg, 1);
+  class_define_index(pba->index_bg_p_e,   pba->has_exotic, index_bg, 1);
+
 
   /* - end of indices in the normal vector of background values */
   pba->bg_size_normal = index_bg;
@@ -2454,6 +2483,7 @@ int background_output_titles(
   class_store_columntitle(titles,"(.)w_fld",pba->has_fld);
   class_store_columntitle(titles,"(.)rho_ur",pba->has_ur);
   class_store_columntitle(titles,"(.)rho_idr",pba->has_idr);
+  class_store_columntitle(titles,"(.)rho_e",pba->has_exotic);
   class_store_columntitle(titles,"(.)rho_crit",_TRUE_);
   class_store_columntitle(titles,"(.)rho_dcdm",pba->has_dcdm);
   class_store_columntitle(titles,"(.)rho_dr",pba->has_dr);
@@ -2530,6 +2560,7 @@ int background_output_data(
     class_store_double(dataptr,pvecback[pba->index_bg_w_fld],pba->has_fld,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_ur],pba->has_ur,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_idr],pba->has_idr,storeidx);
+    class_store_double(dataptr,pvecback[pba->index_bg_rho_e],pba->has_exotic,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_crit],_TRUE_,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_dcdm],pba->has_dcdm,storeidx);
     class_store_double(dataptr,pvecback[pba->index_bg_rho_dr],pba->has_dr,storeidx);
@@ -2863,6 +2894,13 @@ int background_output_budget(
       class_print_species("Spatial Curvature",k);
       budget_other+=pba->Omega0_k;
     }
+
+    if (pba->has_exotic == _TRUE_) {
+      printf("-> %-26s Omega = %-15g , omega = %-15g\n",
+             "Exotic Fluid", pba->Omega0_e, pba->Omega0_e*pba->h*pba->h);
+      budget_other += pba->Omega0_e;
+    }
+
 
     printf(" ---> Total budgets \n");
     printf(" Radiation                        Omega = %-15g , omega = %-15g \n",budget_radiation,budget_radiation*pba->h*pba->h);

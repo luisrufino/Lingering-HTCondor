@@ -98,6 +98,14 @@ struct background
   int * ncdm_input_q_size; /**< Vector of numbers of q bins */
   double * ncdm_qmax;      /**< Vector of maximum value of q */
 
+  /* Exotic lingering fluid parameters */
+  double Omega0_e;    /**< present-day density fraction of exotic fluid */
+  double n_e;         /**< scaling exponent: rho_e ~ a^{-n_e}, where n_e = 3(1+w_e) */
+  double w_e;         /**< equation of state w_e = n_e/3 - 1 */
+  short has_exotic;   /**< flag for presence of exotic fluid */
+  int index_bg_rho_e; /**< index in background vector for rho_e */
+  int index_bg_p_e;   /**< index in background vector for p_e */
+
   double Omega0_k;         /**< \f$ \Omega_{0_k} \f$: curvature contribution */
 
   double Omega0_lambda;    /**< \f$ \Omega_{0_\Lambda} \f$: cosmological constant */

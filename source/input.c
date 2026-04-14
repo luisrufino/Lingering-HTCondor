@@ -3150,6 +3150,34 @@ int input_read_parameters_species(struct file_content * pfc,
 
   /* ** ADDITIONAL SPECIES ** */
 
+  /* Exotic lingering fluid */
+  {
+    int flag_Omega_e, flag_n_e;
+    double param_Omega_e, param_n_e;
+
+    class_call(parser_read_double(pfc, "Omega_e", &param_Omega_e, &flag_Omega_e, errmsg),
+               errmsg, errmsg);
+    class_call(parser_read_double(pfc, "n_e", &param_n_e, &flag_n_e, errmsg),
+               errmsg, errmsg);
+
+    if (flag_Omega_e == _TRUE_) {
+      pba->Omega0_e   = param_Omega_e;
+      pba->n_e        = (flag_n_e == _TRUE_) ? param_n_e : 0.0;  /* default: cosmological constant */
+      pba->w_e        = pba->n_e / 3.0 - 1.0;
+      pba->has_exotic = _TRUE_;
+
+      if (pba->background_verbose > 0) {
+        printf("[CLASS] Exotic lingering fluid enabled:\n");
+        printf("         Omega0_e = %e\n", pba->Omega0_e);
+        printf("         n_e      = %f  (w_e = %f)\n", pba->n_e, pba->w_e);
+      }
+    }
+    else {
+      pba->Omega0_e   = 0.0;
+      pba->has_exotic = _FALSE_;
+    }
+  }
+
 
   /** 7.3) Final consistency checks for dark matter species */
 
@@ -3226,6 +3254,9 @@ int input_read_parameters_species(struct file_content * pfc,
   Omega_tot += pba->Omega0_dcdmdr;
   Omega_tot += pba->Omega0_idr;
   Omega_tot += pba->Omega0_ncdm_tot;
+
+  if (pba->has_exotic == _TRUE_) Omega_tot += pba->Omega0_e;
+
   /* Step 1 */
   if (flag1 == _TRUE_){
     pba->Omega0_lambda = param1;
@@ -5901,6 +5932,13 @@ int input_default_params(struct background *pba,
   ppt->has_idm_soundspeed = _FALSE_;
 
   /* ** ADDITIONAL SPECIES ** */
+
+  pba->Omega0_e = 0.;
+  pba->n_e = 0.;
+  pba->w_e = -1.;
+  pba->has_exotic = _FALSE_;
+
+
 
   /** 9) Dark energy contributions */
   pba->Omega0_fld = 0.;
