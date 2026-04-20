@@ -1,0 +1,46 @@
+000 (3650745.003.000) 2026-04-17 11:05:09 Job submitted from host: <10.5.0.95:9618?addrs=10.5.0.95-9618&alias=its-og-login3.syr.edu&noUDP&sock=schedd_1996_ab1f>
+...
+001 (3650745.003.000) 2026-04-17 11:05:20 Job executing on host: <10.5.70.3:9618?addrs=10.5.70.3-9618&alias=NEWH-2HGC9T2-S1-its-u20-nfs-20210413&noUDP&sock=startd_823_1688>
+...
+006 (3650745.003.000) 2026-04-17 11:05:29 Image size of job updated: 42368
+	26  -  MemoryUsage of job (MB)
+	26396  -  ResidentSetSize of job (KB)
+...
+022 (3650745.003.000) 2026-04-17 11:17:49 Job disconnected, attempting to reconnect
+    Socket between submit and execute hosts closed unexpectedly
+    Trying to reconnect to slot1_1@NEWH-2HGC9T2-S1-its-u20-nfs-20210413 <10.5.70.3:9618?addrs=10.5.70.3-9618&alias=NEWH-2HGC9T2-S1-its-u20-nfs-20210413&noUDP&sock=startd_823_1688>
+...
+024 (3650745.003.000) 2026-04-17 11:58:09 Job reconnection failed
+    Job disconnected too long: JobLeaseDuration (2400 seconds) expired
+    Can not reconnect to slot1_1@NEWH-2HGC9T2-S1-its-u20-nfs-20210413, rescheduling job
+...
+001 (3650745.003.000) 2026-04-17 12:03:02 Job executing on host: <10.5.201.222:9618?addrs=10.5.201.222-9618&alias=OG-NODE-10-5-201-222&noUDP&sock=startd_1239_6dee>
+...
+006 (3650745.003.000) 2026-04-17 12:03:10 Image size of job updated: 47248
+	27  -  MemoryUsage of job (MB)
+	27500  -  ResidentSetSize of job (KB)
+...
+006 (3650745.003.000) 2026-04-17 12:08:10 Image size of job updated: 1021364
+	432  -  MemoryUsage of job (MB)
+	441664  -  ResidentSetSize of job (KB)
+...
+006 (3650745.003.000) 2026-04-17 12:18:11 Image size of job updated: 1023708
+	434  -  MemoryUsage of job (MB)
+	444268  -  ResidentSetSize of job (KB)
+...
+006 (3650745.003.000) 2026-04-17 12:48:13 Image size of job updated: 1104728
+	434  -  MemoryUsage of job (MB)
+	444268  -  ResidentSetSize of job (KB)
+...
+006 (3650745.003.000) 2026-04-17 14:28:24 Image size of job updated: 1104728
+	514  -  MemoryUsage of job (MB)
+	525644  -  ResidentSetSize of job (KB)
+...
+006 (3650745.003.000) 2026-04-18 01:14:29 Image size of job updated: 1104728
+	515  -  MemoryUsage of job (MB)
+	526408  -  ResidentSetSize of job (KB)
+...
+006 (3650745.003.000) 2026-04-18 20:26:29 Image size of job updated: 1137496
+	515  -  MemoryUsage of job (MB)
+	526408  -  ResidentSetSize of job (KB)
+...

@@ -1,0 +1,66 @@
+000 (3650745.001.000) 2026-04-17 11:05:09 Job submitted from host: <10.5.0.95:9618?addrs=10.5.0.95-9618&alias=its-og-login3.syr.edu&noUDP&sock=schedd_1996_ab1f>
+...
+001 (3650745.001.000) 2026-04-17 11:05:19 Job executing on host: <10.5.46.2:9618?addrs=10.5.46.2-9618&alias=ITS-EAS-PGI-M10-S1-its-u20-nfs-20210413&noUDP&sock=startd_834_a213>
+...
+006 (3650745.001.000) 2026-04-17 11:05:28 Image size of job updated: 69792
+	69  -  MemoryUsage of job (MB)
+	69792  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 11:10:29 Image size of job updated: 1019136
+	426  -  MemoryUsage of job (MB)
+	436024  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 11:20:29 Image size of job updated: 1019956
+	426  -  MemoryUsage of job (MB)
+	436024  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 11:25:30 Image size of job updated: 1020140
+	426  -  MemoryUsage of job (MB)
+	436024  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 11:30:31 Image size of job updated: 1098680
+	426  -  MemoryUsage of job (MB)
+	436024  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 11:35:31 Image size of job updated: 1098680
+	429  -  MemoryUsage of job (MB)
+	438708  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 11:45:33 Image size of job updated: 1102572
+	429  -  MemoryUsage of job (MB)
+	438708  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 13:30:43 Image size of job updated: 1102572
+	430  -  MemoryUsage of job (MB)
+	439364  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 14:10:46 Image size of job updated: 1102572
+	430  -  MemoryUsage of job (MB)
+	439624  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 14:50:49 Image size of job updated: 1102572
+	430  -  MemoryUsage of job (MB)
+	439964  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 15:15:52 Image size of job updated: 1102572
+	431  -  MemoryUsage of job (MB)
+	441020  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 15:20:52 Image size of job updated: 1102624
+	431  -  MemoryUsage of job (MB)
+	441020  -  ResidentSetSize of job (KB)
+...
+006 (3650745.001.000) 2026-04-17 16:20:57 Image size of job updated: 1102624
+	510  -  MemoryUsage of job (MB)
+	521292  -  ResidentSetSize of job (KB)
+...
+022 (3650745.001.000) 2026-04-18 03:54:24 Job disconnected, attempting to reconnect
+    Socket between submit and execute hosts closed unexpectedly
+    Trying to reconnect to slot1_1@ITS-EAS-PGI-M10-S1-its-u20-nfs-20210413 <10.5.46.2:9618?addrs=10.5.46.2-9618&alias=ITS-EAS-PGI-M10-S1-its-u20-nfs-20210413&noUDP&sock=startd_834_a213>
+...
+024 (3650745.001.000) 2026-04-18 04:34:44 Job reconnection failed
+    Job disconnected too long: JobLeaseDuration (2400 seconds) expired
+    Can not reconnect to slot1_1@ITS-EAS-PGI-M10-S1-its-u20-nfs-20210413, rescheduling job
+...
+001 (3650745.001.000) 2026-04-18 04:38:55 Job executing on host: <10.5.210.138:9618?addrs=10.5.210.138-9618&alias=CRUSH-OG-10-5-210-138&noUDP&sock=startd_1533_16c6>
+...

@@ -1,0 +1,13 @@
+# HTCondor submit file: Baseline LCDM MCMC
+
+executable      = jobs/run_baseline_lcdm.sh
+
+output          = logs/baseline_lcdm.condor.out
+error           = logs/baseline_lcdm.condor.err
+log             = logs/baseline_lcdm.condor.log
+
+request_cpus    = 1
+request_memory  = 4 GB
+request_disk    = 4 GB
+
+queue
