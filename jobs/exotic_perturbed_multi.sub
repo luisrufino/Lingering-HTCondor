@@ -1,0 +1,16 @@
+# HTCondor submit file: Exotic Fluid Perturbed (Chapter 2, 4 independent chains)
+# Each chain gets its own output path via $(Process)
+
+executable      = jobs/run_exotic_perturbed.sh
+
+arguments       = $(Process)
+
+output          = logs/exotic_perturbed_$(Process).condor.out
+error           = logs/exotic_perturbed_$(Process).condor.err
+log             = logs/exotic_perturbed_$(Process).condor.log
+
+request_cpus    = 1
+request_memory  = 4 GB
+request_disk    = 4 GB
+
+queue 4

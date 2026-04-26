@@ -1,0 +1,120 @@
+======================================================================
+CHAPTER 2 PERTURBATION VALIDATION REPORT (v3)
+Generated: 2026-04-26
+======================================================================
+
+----------------------------------------------------------------------
+SECTION 1: Run completion + exotic-fluid activation check
+----------------------------------------------------------------------
+
+### Test 1 (LCDM regression)
+  Cl file: output/test_t1_lcdm__cl_lensed.dat
+  N_lines = 2499, l_max = 2500
+  (no budget/exotic prints in log)
+  Tail of log:
+    Running CLASS version v3.3.4
+    Computing background
+     -> age = 13.809637 Gyr
+     -> conformal age = 14171.777119 Mpc
+     -> N_eff = 3.044 (summed over all species that are non-relativistic at early times) 
+     -> radiation/matter equality at z = 3403.592137
+        corresponding to conformal time = 112.794383 Mpc
+
+### Test 2a (Exotic n_e=0.1)
+  Cl file: output/test_t2a_exotic__cl_lensed.dat
+  N_lines = 2499, l_max = 2500
+  (no budget/exotic prints in log)
+  Tail of log:
+    Running CLASS version v3.3.4
+    Computing background
+     -> age = 13.740506 Gyr
+     -> conformal age = 14131.112864 Mpc
+     -> N_eff = 3.044 (summed over all species that are non-relativistic at early times) 
+     -> radiation/matter equality at z = 3403.592137
+        corresponding to conformal time = 112.794383 Mpc
+
+### Test 2b (fld w0=-0.967)
+  Cl file: output/test_t2b_fld__cl_lensed.dat
+  N_lines = 2499, l_max = 2500
+  (no budget/exotic prints in log)
+  Tail of log:
+    Running CLASS version v3.3.4
+    Computing background
+     -> age = 13.740506 Gyr
+     -> conformal age = 14131.112864 Mpc
+     -> N_eff = 3.044 (summed over all species that are non-relativistic at early times) 
+     -> radiation/matter equality at z = 3403.592137
+        corresponding to conformal time = 112.794383 Mpc
+
+### Test 3a (Exotic n_e=1)
+  Cl file: output/test_t3a_exotic__cl_lensed.dat
+  N_lines = 2499, l_max = 2500
+  (no budget/exotic prints in log)
+  Tail of log:
+    Running CLASS version v3.3.4
+    Computing background
+     -> age = 12.974401 Gyr
+     -> conformal age = 13628.145688 Mpc
+     -> N_eff = 3.044 (summed over all species that are non-relativistic at early times) 
+     -> radiation/matter equality at z = 3403.592137
+        corresponding to conformal time = 112.794382 Mpc
+
+### Test 3b (fld w0=-2/3)
+  Cl file: output/test_t3b_fld__cl_lensed.dat
+  N_lines = 2499, l_max = 2500
+  (no budget/exotic prints in log)
+  Tail of log:
+    Running CLASS version v3.3.4
+    Computing background
+     -> age = 12.974401 Gyr
+     -> conformal age = 13628.145672 Mpc
+     -> N_eff = 3.044 (summed over all species that are non-relativistic at early times) 
+     -> radiation/matter equality at z = 3403.592137
+        corresponding to conformal time = 112.794382 Mpc
+
+### Test 4 (boundary n_e=2)
+  Cl file: output/test_t4_boundary__cl_lensed.dat
+  N_lines = 2499, l_max = 2500
+  (no budget/exotic prints in log)
+  Tail of log:
+    Running CLASS version v3.3.4
+    Computing background
+     -> age = 13.788387 Gyr
+     -> conformal age = 14154.937963 Mpc
+     -> N_eff = 3.044 (summed over all species that are non-relativistic at early times) 
+     -> radiation/matter equality at z = 3403.592137
+        corresponding to conformal time = 112.794336 Mpc
+
+----------------------------------------------------------------------
+SECTION 2: Cl comparisons (exotic vs fld)
+----------------------------------------------------------------------
+
+### Test 2 (n_e=0.1 vs fld w0=-0.967)
+  exotic file: output/test_t2a_exotic__cl_lensed.dat
+  fld file:    output/test_t2b_fld__cl_lensed.dat
+  pass threshold: max_rel_diff_TT < 5e-03
+  max relative TT difference: 3.641e-04
+  at ell = 954
+  median relative TT difference: 4.499e-05
+  N ells compared: 1991
+  VERDICT: PASS
+
+### Test 3 (n_e=1.0 vs fld w0=-2/3)
+  exotic file: output/test_t3a_exotic__cl_lensed.dat
+  fld file:    output/test_t3b_fld__cl_lensed.dat
+  pass threshold: max_rel_diff_TT < 5e-03
+  max relative TT difference: 1.218e-05
+  at ell = 444
+  median relative TT difference: 2.903e-06
+  N ells compared: 1991
+  VERDICT: PASS
+
+----------------------------------------------------------------------
+SECTION 3: Error scan (any 'Error', 'ERROR', 'failed' in any log)
+----------------------------------------------------------------------
+
+  (no error patterns found in any log)
+
+======================================================================
+END OF REPORT
+======================================================================
