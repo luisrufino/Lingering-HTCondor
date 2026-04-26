@@ -1,0 +1,16 @@
+# HTCondor submit file: LCDM Control (4 independent chains)
+# Each chain gets its own output path via $(Process)
+
+executable      = jobs/run_lcdm_control.sh
+
+arguments       = $(Process)
+
+output          = logs/lcdm_control_$(Process).condor.out
+error           = logs/lcdm_control_$(Process).condor.err
+log             = logs/lcdm_control_$(Process).condor.log
+
+request_cpus    = 1
+request_memory  = 4 GB
+request_disk    = 4 GB
+
+queue 4

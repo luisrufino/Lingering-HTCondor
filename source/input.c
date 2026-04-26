@@ -3152,49 +3152,46 @@ int input_read_parameters_species(struct file_content * pfc,
 
   /* Exotic lingering fluid */
   {
-    int flag_Omega_e, flag_n_e;
-    double param_Omega_e, param_n_e;
+    int flag_Omega_e, flag_n_e, flag_cs2;
+    double param_Omega_e, param_n_e, param_cs2;
 
     class_call(parser_read_double(pfc, "Omega_e", &param_Omega_e, &flag_Omega_e, errmsg),
                errmsg, errmsg);
     class_call(parser_read_double(pfc, "n_e", &param_n_e, &flag_n_e, errmsg),
                errmsg, errmsg);
 
-    if (flag_Omega_e == _TRUE_)
+    // 2026-04-26: parse cs2_e unconditionally (CLASS strict-input check)
+    class_call(parser_read_double(pfc, "cs2_e", &param_cs2, &flag_cs2, errmsg),
+               errmsg, errmsg);
+    pba->cs2_e = (flag_cs2 == _TRUE_) ? param_cs2 : 1.0;
+
+    if (pba->cs2_e < 0.) {
+      fprintf(stdout, "  [Chapter 2 WARNING] cs2_e = %e < 0 will cause gradient instability at sub-horizon scales.\n", pba->cs2_e);
+    }
+
+    // 2026-04-26: trigger has_exotic if EITHER Omega_e OR n_e is supplied.
+    // When only n_e is given, Omega0_e is left at 0 here and gets filled in by
+    // the Omega_Lambda=0 closure machinery downstream (see line ~3271 where
+    // Omega_tot += pba->Omega0_e under has_exotic).
+    if ((flag_Omega_e == _TRUE_) || (flag_n_e == _TRUE_))
     {
-      pba->Omega0_e   = param_Omega_e;
-      pba->n_e        = (flag_n_e == _TRUE_) ? param_n_e : 0.0;  /* default: cosmological constant */
+      pba->Omega0_e   = (flag_Omega_e == _TRUE_) ? param_Omega_e : 0.0;
+      pba->n_e        = (flag_n_e == _TRUE_) ? param_n_e : 0.0;
       pba->w_e        = pba->n_e / 3.0 - 1.0;
-
-    // 2026-04-20: read cs2_e with default 1.0 (Chapter 2 perturbation sound speed)
-      double param_cs2 = 1.0;
-      int flag_cs2 = _FALSE_;
-      class_call(parser_read_double(pfc, "cs2_e", &param_cs2, &flag_cs2, errmsg), errmsg, errmsg);
-      pba->cs2_e = (flag_cs2 == _TRUE_) ? param_cs2 : 1.0;
-
-      // Sanity check: warn on negative cs2 (gradient instability; paper's cs2=w_e choice will hit this)
-      if (pba->cs2_e < 0.)
-      {
-        fprintf(stdout, "  [Chapter 2 WARNING] cs2_e = %e < 0 will cause gradient instability at sub-horizon scales.\n", pba->cs2_e);
-      }
-      printf("  cs2_e     = %f\n", pba->cs2_e);
-
       pba->has_exotic = _TRUE_;
 
       if (pba->background_verbose > 0) {
         printf("[CLASS] Exotic lingering fluid enabled:\n");
-        printf("         Omega0_e = %e\n", pba->Omega0_e);
+        printf("         Omega0_e = %e  (0 means: derive from closure)\n", pba->Omega0_e);
         printf("         n_e      = %f  (w_e = %f)\n", pba->n_e, pba->w_e);
+        printf("         cs2_e    = %f\n", pba->cs2_e);
       }
     }
     else {
       pba->Omega0_e   = 0.0;
-      pba->cs2_e = 1.0;  // 2026-04-20: default value when exotic fluid absent (irrelevant but initialized)
       pba->has_exotic = _FALSE_;
     }
   }
-
-
   /** 7.3) Final consistency checks for dark matter species */
 
   class_test(fabs(f_cdm + f_idm - 1.) > 1e-10,
@@ -3286,10 +3283,19 @@ int input_read_parameters_species(struct file_content * pfc,
     pba->Omega0_scf = param3;
     Omega_tot += pba->Omega0_scf;
   }
+
   /* Step 2 */
-  if (flag1 == _FALSE_) {
+  // 2026-04-26: prefer filling Omega0_e if exotic fluid is active and
+  // Omega_Lambda was explicitly set to 0 (Chapter 1 + Chapter 2 setup).
+  if ((pba->has_exotic == _TRUE_) && (flag1 == _TRUE_) && (param1 == 0.)) {
+    pba->Omega0_e = 1. - pba->Omega0_k - Omega_tot;
+    if (input_verbose > 0){
+      printf(" -> matched budget equations by adjusting Omega_e = %g\n", pba->Omega0_e);
+    }
+  }
+  else if (flag1 == _FALSE_) {
     /* Fill with Lambda */
-    pba->Omega0_lambda= 1. - pba->Omega0_k - Omega_tot;
+    pba->Omega0_lambda = 1. - pba->Omega0_k - Omega_tot;
     if (input_verbose > 0){
       printf(" -> matched budget equations by adjusting Omega_Lambda = %g\n",pba->Omega0_lambda);
     }
@@ -3308,6 +3314,7 @@ int input_read_parameters_species(struct file_content * pfc,
       printf(" -> matched budget equations by adjusting Omega_scf = %g\n",pba->Omega0_scf);
     }
   }
+
 
   /* ** END OF BUDGET EQUATION ** */
 

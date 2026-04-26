@@ -1,0 +1,139 @@
+# ============================================================
+# Cobaya MCMC: Exotic Fluid Perturbed, Flat (Omega_k = 0)
+# ============================================================
+# Degeneracy diagnostic. Same model and sound speed as the main
+# Chapter 2 run, but with curvature fixed to zero. Comparing the
+# n_e posterior here against the curvature-sampled run shows
+# whether the exotic-fluid signal is being absorbed by Omega_k.
+#
+# - If n_e posteriors agree: signal is robust, n_e and Omega_k
+#   are not strongly degenerate.
+# - If n_e posterior shifts or tightens significantly: there is
+#   real (n_e, Omega_k) degeneracy; the curvature-sampled run is
+#   the conservative reportable result.
+#
+# Date: 2026-04-26
+# CLASS dir: class_public_chapter2 (perturbed exotic fluid build)
+# ============================================================
+
+debug: True
+
+params:
+
+  logA:
+    prior:
+      min: 1.61
+      max: 3.91
+    ref:
+      dist: norm
+      loc: 3.05
+      scale: 0.001
+    proposal: 0.001
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: true
+
+  A_s:
+    value: "lambda logA: 1e-10*np.exp(logA)"
+    latex: A_\mathrm{s}
+
+  n_s:
+    prior:
+      min: 0.8
+      max: 1.2
+    ref:
+      dist: norm
+      loc: 0.965
+      scale: 0.004
+    proposal: 0.002
+    latex: n_\mathrm{s}
+
+  H0:
+    prior:
+      min: 55
+      max: 91
+    ref:
+      dist: norm
+      loc: 67.4
+      scale: 0.5
+    proposal: 0.5
+    latex: H_0
+
+  omega_b:
+    prior:
+      min: 0.005
+      max: 0.1
+    ref:
+      dist: norm
+      loc: 0.0224
+      scale: 0.0001
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+
+  omega_cdm:
+    prior:
+      min: 0.001
+      max: 0.99
+    ref:
+      dist: norm
+      loc: 0.120
+      scale: 0.001
+    proposal: 0.001
+    latex: \Omega_\mathrm{cdm} h^2
+
+  tau_reio:
+    prior:
+      min: 0.01
+      max: 0.8
+    ref:
+      dist: norm
+      loc: 0.055
+      scale: 0.006
+    proposal: 0.003
+    latex: \tau_\mathrm{reio}
+
+  # --- Exotic fluid: equation of state exponent ---
+  n_e:
+    prior:
+      min: 0.0
+      max: 2.0
+    ref:
+      dist: norm
+      loc: 0.0
+      scale: 0.3
+    proposal: 0.2
+    latex: n_\mathrm{e}
+
+  # --- Curvature fixed to zero (Omega_k not sampled) ---
+
+
+theory:
+  classy:
+    path: /home/lerufino/PlanckData/packages/class_public_chapter2
+    extra_args:
+      l_max_scalars: 2600
+      output: "tCl, pCl, lCl"
+      lensing: "yes"
+      Omega_Lambda: 0
+      Omega_k: 0
+      cs2_e: 1.0
+
+
+likelihood:
+  planck_2018_lowl.TT:
+  planck_2018_lowl.EE:
+  planck_2018_highl_plik.TTTEEE:
+  planck_2018_lensing.clik:
+
+
+sampler:
+  mcmc:
+    drag: true
+    oversample_power: 0.4
+    proposal_scale: 1.9
+    learn_proposal: true
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+    max_tries: 10000
+
+
+output: chains/exotic_perturbed_flat/exotic_perturbed_flat
