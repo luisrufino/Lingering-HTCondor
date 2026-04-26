@@ -3160,10 +3160,25 @@ int input_read_parameters_species(struct file_content * pfc,
     class_call(parser_read_double(pfc, "n_e", &param_n_e, &flag_n_e, errmsg),
                errmsg, errmsg);
 
-    if (flag_Omega_e == _TRUE_) {
+    if (flag_Omega_e == _TRUE_)
+    {
       pba->Omega0_e   = param_Omega_e;
       pba->n_e        = (flag_n_e == _TRUE_) ? param_n_e : 0.0;  /* default: cosmological constant */
       pba->w_e        = pba->n_e / 3.0 - 1.0;
+
+    // 2026-04-20: read cs2_e with default 1.0 (Chapter 2 perturbation sound speed)
+      double param_cs2 = 1.0;
+      int flag_cs2 = _FALSE_;
+      class_call(parser_read_double(pfc, "cs2_e", &param_cs2, &flag_cs2, errmsg), errmsg, errmsg);
+      pba->cs2_e = (flag_cs2 == _TRUE_) ? param_cs2 : 1.0;
+
+      // Sanity check: warn on negative cs2 (gradient instability; paper's cs2=w_e choice will hit this)
+      if (pba->cs2_e < 0.)
+      {
+        fprintf(stdout, "  [Chapter 2 WARNING] cs2_e = %e < 0 will cause gradient instability at sub-horizon scales.\n", pba->cs2_e);
+      }
+      printf("  cs2_e     = %f\n", pba->cs2_e);
+
       pba->has_exotic = _TRUE_;
 
       if (pba->background_verbose > 0) {
@@ -3174,6 +3189,7 @@ int input_read_parameters_species(struct file_content * pfc,
     }
     else {
       pba->Omega0_e   = 0.0;
+      pba->cs2_e = 1.0;  // 2026-04-20: default value when exotic fluid absent (irrelevant but initialized)
       pba->has_exotic = _FALSE_;
     }
   }

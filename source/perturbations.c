@@ -3945,6 +3945,11 @@ int perturbations_vector_init(
       class_define_index(ppv->index_pt_Gamma_fld,pba->has_fld,index_pt,1); /* Gamma variable of PPF scheme */
     }
 
+    // 2026-04-20: exotic fluid perturbation indices (Chapter 2)
+    class_define_index(ppv->index_pt_delta_e, pba->has_exotic, index_pt, 1); /* exotic fluid density */
+    class_define_index(ppv->index_pt_theta_e, pba->has_exotic, index_pt, 1); /* exotic fluid velocity */
+    //End
+
     /* scalar field */
 
     class_define_index(ppv->index_pt_phi_scf,pba->has_scf,index_pt,1); /* scalar field density */
@@ -4413,6 +4418,15 @@ int perturbations_vector_init(
             ppw->pv->y[ppw->pv->index_pt_Gamma_fld];
         }
       }
+
+      // 2026-04-20: propagate exotic fluid perturbations across approximation switches (Chapter 2)
+      // The exotic fluid is not affected by any approximation scheme (tca, rsa, ufa, ncdmfa),
+      // so we just copy state when the vector is re-allocated.
+      if (pba->has_exotic == _TRUE_) {
+        ppv->y[ppv->index_pt_delta_e] = ppw->pv->y[ppw->pv->index_pt_delta_e];
+        ppv->y[ppv->index_pt_theta_e] = ppw->pv->y[ppw->pv->index_pt_theta_e];
+      }
+      //End
 
       if (pba->has_scf == _TRUE_) {
 
@@ -5469,6 +5483,16 @@ int perturbations_initial_conditions(struct precision * ppr,
           ppw->pv->y[ppw->pv->index_pt_theta_fld] = - k*ktau_three/4.*pba->cs2_fld/(4.-6.*w_fld+3.*pba->cs2_fld) * ppr->curvature_ini * s2_squared; /* from 1004.5509 */ //TBC:curvature
         }
         /* if use_ppf == _TRUE_, y[ppw->pv->index_pt_Gamma_fld] will be automatically set to zero, and this is what we want (although one could probably work out some small nonzero initial conditions: TODO) */
+      }
+
+      // 2026-04-20: adiabatic initial conditions for exotic fluid (Chapter 2)
+      // Standard Ma-Bertschinger adiabatic extrapolation for a constant-w fluid in synchronous gauge.
+      // Matches the stock CLASS `fld` formula with w_fld -> w_e, cs2_fld -> cs2_e.
+      if (pba->has_exotic == _TRUE_) {
+      double w_e  = pba->w_e;
+      double cs2e = pba->cs2_e;
+      ppw->pv->y[ppw->pv->index_pt_delta_e] = - ktau_two/4. * (1.+w_e) * (4.-3.*cs2e) / (4.-6.*w_e+3.*cs2e) * ppr->curvature_ini * s2_squared;
+      ppw->pv->y[ppw->pv->index_pt_theta_e] = - k*ktau_three/4. * cs2e / (4.-6.*w_e+3.*cs2e) * ppr->curvature_ini * s2_squared;
       }
 
       if (pba->has_scf == _TRUE_) {
@@ -7264,6 +7288,19 @@ int perturbations_total_stress_energy(
 
       ppw->rho_plus_p_tot += (1.+w_fld)*ppw->pvecback[pba->index_bg_rho_fld];
 
+    }
+
+    // 2026-04-20: exotic fluid contribution to total stress-energy (Chapter 2)
+    // No anisotropic stress (perfect fluid), so no contribution to rho_plus_p_shear.
+    if (pba->has_exotic == _TRUE_) {
+       double rho_e = ppw->pvecback[pba->index_bg_rho_e];
+      double delta_rho_e        = rho_e * y[ppw->pv->index_pt_delta_e];
+      double delta_p_e          = pba->cs2_e * delta_rho_e;
+      double rho_plus_p_theta_e = (1. + pba->w_e) * rho_e * y[ppw->pv->index_pt_theta_e];
+
+      ppw->delta_rho         += delta_rho_e;
+      ppw->rho_plus_p_theta  += rho_plus_p_theta_e;
+      ppw->delta_p           += delta_p_e;
     }
 
     /* don't add more species here, add them before the fluid contribution: because of the PPF scheme, the fluid must be the last one! */
@@ -9389,6 +9426,20 @@ int perturbations_derivs(double tau,
       }
 
     }
+
+    // 2026-04-20: exotic fluid evolution equations (Chapter 2)
+    // Constant-w fluid, so adiabatic sound speed ca2_e = w_e.
+    // Same form as stock CLASS fld; gauge handled transparently by metric_continuity and metric_euler.
+    if (pba->has_exotic == _TRUE_) {
+        double w_e   = pba->w_e;
+        double cs2e  = pba->cs2_e;
+        double ca2_e = w_e;  // adiabatic sound speed squared for constant-w fluid
+
+        dy[pv->index_pt_delta_e] = -(1. + w_e) * (y[pv->index_pt_theta_e] + metric_continuity) - 3. * a_prime_over_a * (cs2e - w_e) * y[pv->index_pt_delta_e] - 9. * a_prime_over_a * a_prime_over_a * (cs2e - ca2_e) * (1. + w_e) * y[pv->index_pt_theta_e] / k2;
+
+        dy[pv->index_pt_theta_e] = -a_prime_over_a * (1. - 3. * cs2e) * y[pv->index_pt_theta_e] + cs2e * k2 / (1. + w_e) * y[pv->index_pt_delta_e] + metric_euler;
+    }
+
 
     /** - ---> scalar field (scf) */
 

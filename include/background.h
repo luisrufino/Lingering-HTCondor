@@ -106,6 +106,9 @@ struct background
   int index_bg_rho_e; /**< index in background vector for rho_e */
   int index_bg_p_e;   /**< index in background vector for p_e */
 
+  // 2026-04-20: exotic fluid rest-frame sound speed squared (Chapter 2 perturbations)
+  double cs2_e;     // dimensionless; default 1.0 set in input.c
+
   double Omega0_k;         /**< \f$ \Omega_{0_k} \f$: curvature contribution */
 
   double Omega0_lambda;    /**< \f$ \Omega_{0_\Lambda} \f$: cosmological constant */

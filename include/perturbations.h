@@ -480,6 +480,13 @@ struct perturbations_vector
   int index_pt_delta_fld;  /**< dark energy density in true fluid case */
   int index_pt_theta_fld;  /**< dark energy velocity in true fluid case */
   int index_pt_Gamma_fld;  /**< unique dark energy dynamical variable in PPF case */
+
+  // 2026-04-20: exotic fluid perturbation indices (Chapter 2)
+  int index_pt_delta_e;    /**< exotic fluid density perturbation */
+  int index_pt_theta_e;    /**< exotic fluid velocity perturbation */
+  //  End  exotic fluid perturbation indices (Chapter 2)
+
+
   int index_pt_phi_scf;  /**< scalar field density */
   int index_pt_phi_prime_scf;  /**< scalar field velocity */
   int index_pt_delta_ur; /**< density of ultra-relativistic neutrinos/relics */
